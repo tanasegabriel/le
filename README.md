@@ -110,6 +110,11 @@ The agent stores configuration in `~/.le/config` for ordinary users and in
 `/etc/le/config` for root (daemon). It is created with `init` or `reinit`
 commands and can be created or modified manually.
 
+The agent supports a configuration directory which is, per default
+`~/.le/conf.d/` for ordinary users and `/etc/le/conf.d` for root (daemon).
+Files matching `*.cfg` will be loaded and used as configuration from the
+config directory. The order of the loaded files depends on the naming.
+
 The structure of the configuration file follows standard similar to what you
 find in `.git/config` or Windows INI files. For example:
 
@@ -129,6 +134,19 @@ In the main section, `user-key` (account key) which identifies account, and
 `agent-key` which identifies host (host key).
 
 Note the `monitor` command requires both `user-key` and `agent-key` defined.
+
+### Modifying the configuration directory
+
+The configuration directory is set per default to `~/.le/conf.d/` for ordinary
+users and to `/etc/le/conf.d` for root. Files ending in `*.cfg` will get always loaded
+from the default location. It is however possible to load additional configuration files by
+specifying `include-directory` in the `[Main]` section of the configuration file, e.g:
+
+	[Main]
+	user-key = e720a1e8-a7d5-4f8b-8879-854e51c9290d
+	include-directory = /opt/configurations/logentries/
+
+which will load the configuration files matching `*.cfg` from `/opt/configurations/logentries/`
 
 
 Follow log files through server-side configuration
@@ -179,7 +197,7 @@ exist, it is created.
 
 **Note**: When using the destination parameter it is advised not to initialize multiple agents
 with the same configuration file at the same time. This is to prevent a race condition where
-duplicate Log Sets may be created. 
+duplicate Log Sets may be created.
 
 Example:
 
