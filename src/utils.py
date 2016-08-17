@@ -17,6 +17,23 @@ from backports import match_hostname, CertificateError
 
 import logging
 
+try:
+    import termcolor
+    colored = termcolor.colored
+except ImportError:
+    def colored(text, color):
+        return text
+
+def red(text):
+    return colored('%s'%text, 'red')
+
+def c_param(text):
+    return colored('%s'%text, 'green')
+
+def c_id(text):
+    return colored('%s'%text, 'cyan')
+
+
 
 __author__ = 'Logentries'
 
@@ -24,7 +41,9 @@ __all__ = ["EXIT_OK", "EXIT_NO", "EXIT_HELP", "EXIT_ERR", "EXIT_TERMINATED",
            "ServerHTTPSConnection", "LOG_LE_AGENT", "create_conf_dir",
            "default_cert_file", "system_cert_file", "domain_connect",
            "no_more_args", "find_hosts", "find_logs", "find_api_obj_by_key", "find_api_obj_by_name", "die",
-           "rfile", 'TCP_TIMEOUT', "rm_pidfile", "uuid_parse", "report"]
+           "error",
+           "rfile", 'TCP_TIMEOUT', "rm_pidfile", "uuid_parse", "report",
+           "colored", "c_param", "c_id"]
 
 # Return codes
 EXIT_OK = 0
@@ -392,6 +411,9 @@ def find_api_obj_by_key(obj_list, key):
 def die(cause, exit_code=EXIT_ERR):
     log.critical(cause)
     sys.exit(exit_code)
+
+def error(cause, *args):
+    die(red('Error:' + ' ' + cause%args))
 
 
 def rfile(name):
