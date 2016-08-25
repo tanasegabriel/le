@@ -32,7 +32,7 @@ $LE --debug-events monitor &
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:8081 PUT /f720fe54-879a-11e4-81ac-277d856f873e/hosts/41ae887a-284a-4d78-91fe-56485b076148/400da462-36fa-48f4-bb4e-87f96ad34e8a/?realtime=1 HTTP/1.0
 #e Following $TMP/system.out
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 
 
 LE_PID=$!
@@ -45,5 +45,6 @@ sleep 1
 #e First message
 #e Second message
 
-kill $LE_PID
+#e
+#e Shutting down
 

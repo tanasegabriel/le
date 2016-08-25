@@ -69,3 +69,6 @@ sleep 1
 #e First message
 #e Second message
 
+#e
+#e Shutting down
+

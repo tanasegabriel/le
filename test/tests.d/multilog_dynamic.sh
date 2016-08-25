@@ -4,11 +4,11 @@
 
 #############                                                      ##############
 #       "multilog dynamic"                                                      #
-#       Test Scope: 'dynamic' behaviour for '--multilog' wildcard.              #  
+#       Test Scope: 'dynamic' behaviour for '--multilog' wildcard.              #
 #       The Agent is initialised and then the command line used to set the      #
 #       agent to follow a filepath with a wildcard. The 'dynamic' behaviour     #
 #       of the agent for '--multilog' option is then tested.                    #
-#       Refer to the agent README for details on this 'dynamic' behaviour.      #    
+#       Refer to the agent README for details on this 'dynamic' behaviour.      #
 #                                                                               #
 #############                                                      ##############
 
@@ -54,10 +54,10 @@ touch apache-03/current
 $LE --debug-events --debug-multilog monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/apache*/current
-#e Opening connection 127.0.0.1:10000 
-#e Number of followers increased to: 1 
-#e Number of followers increased to: 2 
-#e Number of followers increased to: 3 
+#e Opening connection 127.0.0.1:10000
+#e Number of followers increased to: 1
+#e Number of followers increased to: 2
+#e Number of followers increased to: 3
 LE_PID=$!
 sleep 1
 echo 'First message' >> apache-01/current
@@ -71,19 +71,24 @@ echo 'Third message' >> apache-03/current
 sleep 1
 mkdir apache-04
 touch apache-04/current
-#e Number of followers increased to: 4 
+#e Number of followers increased to: 4
 sleep 1
 echo 'Fourth message' >> apache-01/current
 sleep 1
 #e Fourth message
 rm -rf apache-01
 sleep 1
-#e Number of followers decreased to: 3 
+#e Number of followers decreased to: 3
 
 # tidy up test directory and daemon
 rm -rf apache*
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
+#e Number of followers decreased to: 2
+#e Number of followers decreased to: 1
 
 
 Scenario 'Using server side configuration to test dynamic behaviour'
@@ -110,9 +115,9 @@ touch apache-02/current
 mkdir apache-03
 touch apache-03/current
 
-#e Number of followers increased to: 1 
-#e Number of followers increased to: 2 
-#e Number of followers increased to: 3 
+#e Number of followers increased to: 1
+#e Number of followers increased to: 2
+#e Number of followers increased to: 3
 sleep 1
 echo 'First message' >> apache-01/current
 sleep 1
@@ -125,7 +130,7 @@ echo 'Third message' >> apache-03/current
 sleep 1
 rm -rf apache-01
 sleep 1
-#e Number of followers decreased to: 2 
+#e Number of followers decreased to: 2
 echo 'Fourth message' >> apache-02/current
 sleep 1
 #e Fourth message
@@ -135,4 +140,8 @@ sleep 1
 
 # tidy up test directory and daemon
 rm -rf apache*
-kill $LE_PID
+
+#e
+#e Shutting down
+#e Number of followers decreased to: 1
+

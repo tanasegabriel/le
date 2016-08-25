@@ -89,4 +89,7 @@ sleep 1
 
 # tidy up test directory and daemon
 rm -rf apache*
-kill $LE_PID
+
+#e
+#e Shutting down
+

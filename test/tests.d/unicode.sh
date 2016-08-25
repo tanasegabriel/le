@@ -25,6 +25,6 @@ echo 'Message: ěščřžýáíéů' >> example.log
 #e Message: ěščřžýáíéů
 sleep 1
 
-kill $LE_PID
-wait $LE_PID 2>/dev/null || true
+#e
+#e Shutting down
 
