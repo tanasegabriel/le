@@ -21,7 +21,6 @@ EOF
 touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!
@@ -63,7 +62,6 @@ Testcase 'Complex behavior pattern including time separation'
 touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!
@@ -116,7 +114,6 @@ EOF
 touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!
@@ -152,7 +149,6 @@ EOF
 touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!
@@ -189,7 +185,6 @@ EOF
 touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!

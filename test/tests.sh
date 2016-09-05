@@ -18,7 +18,7 @@ trap finish EXIT
 
 export AUTO_TEST='yes'
 
-declare -A TEMPLATES
+declare -a TEMPLATES
 [ -f /etc/debian_version ] && TEMPLATES[DEBIAN_VERSION]="$(cat /etc/debian_version)"
 [ -f /etc/debian_version ] && TEMPLATES[DEBIAN_VERSION_ENC]="${TEMPLATES[DEBIAN_VERSION]/\//%2F}"
 

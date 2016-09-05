@@ -24,7 +24,6 @@ cat "$CONFIG"
 #o [Main]
 #o user-key = f720fe54-879a-11e4-81ac-277d856f873e
 #o agent-key = 9df0ea6f-36fa-820f-a6bc-c97da8939a06
-#o v1_metrics = False
 #o metrics-mem = system
 #o metrics-token = 
 #o metrics-disk = sum
@@ -51,7 +50,6 @@ touch apache-03/current
 
 $LE --debug-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/apache*/current
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!
