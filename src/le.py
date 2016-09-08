@@ -45,7 +45,6 @@ FORCE_DOMAIN_PARAM = 'force_domain'
 DATAHUB_PARAM = 'datahub'
 SYSSTAT_TOKEN_PARAM = 'system-stat-token'
 HOSTNAME_PARAM = 'hostname'
-V1_METRICS_PARAM = 'v1_metrics'
 TOKEN_PARAM = 'token'
 PATH_PARAM = 'path'
 INCLUDE_PARAM = 'include'
@@ -949,544 +948,6 @@ def retrieve_account_key():
 
         print >> sys.stderr, 'Try to log in again, or press Ctrl+C to break'
 
-
-class Stats(object):
-
-    """Collects statistics about the system work load.
-    """
-
-    def __init__(self):
-        self.timer = None
-        self.to_remove = False
-        self.first = True
-
-        # Memory fields we are looking for in /proc/meminfo
-        self.MEM_FIELDS = ['MemTotal:', 'Active:', 'Cached:']
-        # Block devices in the system
-        all_devices = [os.path.basename(filename)
-                       for filename in glob.glob(SYS_BLOCK_DEV + '/*')]
-        # Monitored devices (all devices except loop)
-        self.our_devices = frozenset([device_name for device_name in all_devices if
-                                      not device_name.startswith("loop") and not device_name.startswith(
-                                          "ram") and not device_name.startswith("md")])
-
-        self.prev_cpu_stats = [0, 0, 0, 0, 0, 0, 0]
-        self.prev_disk_stats = [0, 0]
-        self.prev_net_stats = [0, 0]
-        self.total = {}
-        self.total['dr'] = 0
-        self.total['dw'] = 0
-        self.total['ni'] = 0
-        self.total['no'] = 0
-
-        self.procfilesystem = True
-        if not os.path.exists(CPUSTATS_FILE):
-            # store system type for later reference in pulling stats
-            # in an alternate manner
-            self.procfilesystem = False
-            self.uname = platform.uname()
-            self.sys = self.uname[0]
-            log.debug('sys: %s', self.sys)
-
-        # for scaling in osx_top_stats -- key is a scale factor (gig,
-        # meg, etc), value is what to multiply by to get to kilobytes
-        self.scale2kb = {'M': 1024, 'G': 1048576}
-
-        if not config.debug_nostats:
-            pass
-            # New stats will go here
-
-    @staticmethod
-    def save_data(data, name, value):
-        """
-        Saves the value under the name given. Negative values are set to 0.
-        """
-        if value >= 0:
-            data[name] = value
-        else:
-            data[name] = 0
-
-    def cpu_stats(self, data):
-        """
-        Collects CPU statistics. Virtual ticks are ignored.
-        """
-        try:
-            for line in fileinput.input([CPUSTATS_FILE]):
-                if len(line) < 13:
-                    continue
-                if line.startswith('cpu '):
-                    raw_stats = [long(part) for part in line.split()[1:8]]
-                    break
-            fileinput.close()
-        except IOError:
-            return
-
-        self.save_data(data, 'cu', raw_stats[0] - self.prev_cpu_stats[0])
-        self.save_data(data, 'cl', raw_stats[1] - self.prev_cpu_stats[1])
-        self.save_data(data, 'cs', raw_stats[2] - self.prev_cpu_stats[2])
-        self.save_data(data, 'ci', raw_stats[3] - self.prev_cpu_stats[3])
-        self.save_data(data, 'cio', raw_stats[4] - self.prev_cpu_stats[4])
-        self.save_data(data, 'cq', raw_stats[5] - self.prev_cpu_stats[5])
-        self.save_data(data, 'csq', raw_stats[6] - self.prev_cpu_stats[6])
-        self.prev_cpu_stats = raw_stats
-
-    def disk_stats(self, data):
-        """
-        Collects disk statistics. Interested in block devices only.
-        """
-        reads = 0L
-        writes = 0L
-        # For all block devices
-        for device in self.our_devices:
-            try:
-                # Read device stats
-                f = open(SYS_BLOCK_DEV + device + '/stat', 'r')
-                line = f.read()
-                f.close()
-            except IOError:
-                continue
-
-            # Parse device stats
-            parts = line.split()
-            if len(parts) < 7:
-                continue
-            reads += long(parts[2])
-            writes += long(parts[6])
-
-        reads *= 512
-        writes *= 512
-        self.save_data(data, 'dr', reads - self.prev_disk_stats[0])
-        self.save_data(data, 'dw', writes - self.prev_disk_stats[1])
-        self.prev_disk_stats = [reads, writes]
-        self.total['dr'] = reads
-        self.total['dw'] = writes
-
-    def mem_stats(self, data):
-        """
-        Collects memory statistics.
-        """
-        mem_vars = {}
-        for field in self.MEM_FIELDS:
-            mem_vars[field] = 0L
-        try:
-            for line in fileinput.input([MEMSTATS_FILE]):
-                parts = line.split()
-                name = parts[0]
-                if name in self.MEM_FIELDS:
-                    mem_vars[name] = long(parts[1])
-            fileinput.close()
-        except IOError:
-            return
-        self.save_data(data, 'mt', mem_vars[self.MEM_FIELDS[0]])
-        self.save_data(data, 'ma', mem_vars[self.MEM_FIELDS[1]])
-        self.save_data(data, 'mc', mem_vars[self.MEM_FIELDS[2]])
-
-    def net_stats(self, data):
-        """
-        Collects network statistics. Collecting only selected interfaces.
-        """
-        receive = 0L
-        transmit = 0L
-        try:
-            for line in fileinput.input([NETSTATS_FILE]):
-                if line[:5] in NET_DEVICES:
-                    parts = line.replace(':', ' ').split()
-                    receive += long(parts[1])
-                    transmit += long(parts[9])
-            fileinput.close()
-        except IOError:
-            return
-
-        self.save_data(data, 'ni', receive - self.prev_net_stats[0])
-        self.save_data(data, 'no', transmit - self.prev_net_stats[1])
-        self.prev_net_stats = [receive, transmit]
-        self.total['ni'] = receive
-        self.total['no'] = transmit
-
-    def osx_top_stats(self, data):
-        """
-        Darwin/OS-X doesn't seem to provide nearly the same amount of
-        detail as the /proc filesystem under Linux -- at least not
-        easily accessible to the command line.  The headers from
-        top(1) seem to be the quickest & most detailed source of data
-        about CPU, and disk transfer as separated into reads & writes.
-        (vs. iostat, which shows CPU less granularly; it shows more
-         detail about per-disk IO, but does not split IO into reads and
-         writes)
-
-        Frustratingly, the level of per-disk statistics from top is
-        incredibly un-granular
-
-        We'll get physical memory details from here too
-        """
-        cpure = re.compile(r'CPU usage:\s+([\d.]+)\% user, ([\d.]+)\% sys, '
-                           r'([\d.]+)\% idle')
-        memre = re.compile(r'PhysMem:\s+(\d+\w+) wired, '
-                           r'(\d+\w+) active, (\d+\w+) inactive, '
-                           r'(\d+\w+) used, (\d+\w+) free.')
-        diskre = re.compile(r'Disks: (\d+)/(\d+\w+) read, '
-                            r'(\d+)/(\d+\w+) written.')
-
-        # scaling routine for use in map() later
-        def scaletokb(value):
-            # take a value like 1209M or 10G and return an integer
-            # representing the value in kilobytes
-
-            (size, scale) = re.split('([A-z]+)', value)[:2]
-            size = int(size)
-            if scale:
-                if scale in self.scale2kb:
-                    size *= self.scale2kb[scale]
-                else:
-                    log.warning("Error: value in %s expressed in "
-                                "dimension I can't translate to kb: %s %s",
-                                line, size, scale)
-            return size
-
-        # the first set of 'top' headers display average values over
-        # system uptime.  so we only want to read the second set that we
-        # see.
-        toppass = 0
-
-        # we should really do this first, so that we don't waste any time
-        # if top fails to work.  however, it 'reads' better at this point
-        try:
-            proc = subprocess.Popen(['top',
-                                     '-i', '2', '-l', '2', '-n', '0'],
-                                    stdout=subprocess.PIPE)
-        except:
-            return
-
-        for line in proc.stdout:
-            # skip the first output
-            if line.startswith('Processes: '):
-                toppass += 1
-            elif line.startswith('CPU usage: ') and toppass == 2:
-                cpuresult = cpure.match(line)
-                """
-                the data we send to logentries is expected to be in terms
-                of centiseconds of (user/system/idle/etc) time as all we
-                have is %, multiply that % by the EPOCH and 100.
-                """
-                if cpuresult:
-                    (cu, cs, ci) = map(lambda x: int(float(x) * 100 * EPOCH),
-                                       cpuresult.group(1, 2, 3))
-                    self.save_data(data, 'cu', cu)
-                    self.save_data(data, 'cs', cs)
-                    self.save_data(data, 'ci', ci)
-                    # send zero in case all must be present
-                    self.save_data(data, 'cl', 0)
-                    self.save_data(data, 'cio', 0)
-                    self.save_data(data, 'cq', 0)
-                    self.save_data(data, 'csq', 0)
-                else:
-                    log.warning("Error: could not parse CPU stats "
-                                "in top output line %s", line)
-
-            elif line.startswith('PhysMem: ') and toppass == 2:
-                """
-                OS-X has no fixed cache size -- cached pages are stored in
-                virtual memory as part of the Unified Buffer Cache.  It
-                would appear to be nearly impossible to find out what the
-                current size of the UBC is, save running purge(8) and
-                comparing the values before and after -- UBC uncertainty
-                principal? :-)
-
-                http://wagerlabs.com/blog/2008/03/04/hacking-the-mac-osx-unified-buffer-cache/
-                books.google.ie/books?isbn=0132702266
-                http://reviews.cnet.com/8301-13727_7-57372267-263/purge-the-os-x-disk-cache-to-analyze-memory-usage/
-                """
-                memresult = memre.match(line)
-                if memresult:
-                    # logentries is expecting values in kilobytes
-                    (wired, active, inactive, used, free) = map(
-                        scaletokb, memresult.group(1, 2, 3, 4, 5))
-                    self.save_data(data, 'mt', used + free)
-                    self.save_data(data, 'ma', active)
-                    self.save_data(data, 'mc', 0)
-                else:
-                    log.warning("Error: could not parse memory stats "
-                                "in top output line %s", line)
-
-            elif line.startswith('Disks: ') and toppass == 2:
-                diskresult = diskre.match(line)
-                """
-                the data we send to logentries is expected to be in bytes
-                """
-                if diskresult:
-                    (reads, writes) = map(scaletokb,
-                                          diskresult.group(2, 4))
-                    reads *= 1024
-                    writes *= 1024
-
-                    self.save_data(data, 'dr',
-                                   reads - self.prev_disk_stats[0])
-                    self.save_data(data, 'dw',
-                                   writes - self.prev_disk_stats[1])
-                    self.prev_disk_stats = [reads, writes]
-                else:
-                    log.warning("Error: could not parse disk stats "
-                                "in top output line %s", line)
-
-    def sunos_top_stats(self, data):
-        """
-        SunOS/SmartOS doesn't seem to provide nearly the same amount of
-        detail as the /proc filesystem under Linux -- at least not
-        easily accessible to the command line.  The headers from
-        top(1) seem to be the quickest & most detailed source of data
-        about CPU, and disk transfer as separated into reads & writes.
-        (vs. iostat, which shows CPU less granularly; it shows more
-         detail about per-disk IO, but does not split IO into reads and
-         writes)
-
-        Frustratingly, the level of per-disk statistics from top is
-        incredibly un-granular
-
-        We'll get physical memory details from here too
-        """
-        cpure = re.compile(r'CPU states:\s+([\d.]+)\% idle,\s+([\d.]+)\% user,\s+'
-                           r'([\d.]+)\% kernel,\s+([\d.]+)\% iowait')
-        memre = re.compile(r'Memory:\s+(\d+\w+) phys mem, (\d+\w+) free mem, '
-                           r'(\d+\w+) total swap, (\d+\w+) free swap')
-
-        # scaling routine for use in map() later
-        def scaletokb(value):
-            # take a value like 1209M or 10G and return an integer
-            # representing the value in kilobytes
-
-            (size, scale) = re.split('([A-z]+)', value)[:2]
-            size = int(size)
-            if scale:
-                if scale in self.scale2kb:
-                    size *= self.scale2kb[scale]
-                else:
-                    log.warning("Error: value in %s expressed in "
-                                "dimension I can't translate to kb: %s %s",
-                                line, size, scale)
-            return size
-
-        # the first set of 'top' headers display average values over
-        # system uptime.  so we only want to read the second set that we
-        # see.
-        toppass = 0
-
-        # we should really do this first, so that we don't waste any time
-        # if top fails to work.  however, it 'reads' better at this point
-        try:
-            proc = subprocess.Popen(['top',
-                                     '-i', '2', '-l', '2', '-n', '0'],
-                                    stdout=subprocess.PIPE)
-        except:
-            return
-
-        for line in proc.stdout:
-            # skip the first output
-            if line.startswith('load averages: '):
-                toppass += 2
-            elif line.startswith('CPU states: ') and toppass == 2:
-                cpuresult = cpure.match(line)
-                """
-                the data we send to logentries is expected to be in terms
-                of centiseconds of (idle/user/kernel/etc) time as all we
-                have is %, multiply that % by the EPOCH and 100.
-                """
-                if cpuresult:
-                    (ci, cu, cs, cio) = map(lambda x: int(float(x) * 100 * EPOCH * 100),
-                                       cpuresult.group(1, 2, 3, 4))
-                    self.save_data(data, 'cu', cu)
-                    self.save_data(data, 'cs', cs)
-                    self.save_data(data, 'ci', ci)
-                    # send zero in case all must be present
-                    self.save_data(data, 'cl', 0)
-                    self.save_data(data, 'cio', cio)
-                    self.save_data(data, 'cq', 0)
-                    self.save_data(data, 'csq', 0)
-                else:
-                    log.warning("Error: could not parse CPU stats "
-                                "in top output line %s", line)
-
-            elif line.startswith('Memory: ') and toppass == 2:
-                """
-                Top is inaccurate on SmartOS and states the free memory of
-                the entire node, rather than just the virtual instance.
-                """
-                memresult = memre.match(line)
-                if memresult:
-                    # logentries is expecting values in kilobytes
-                    (total, falsefree, swap, freeswap) = map(
-                        scaletokb, memresult.group(1, 2, 3, 4))
-                    self.save_data(data, 'mt', total)
-                    self.save_data(data, 'ma', swap - freeswap)
-                    self.save_data(data, 'mc', 0)
-                else:
-                    log.warning("Error: could not parse memory stats "
-                                "in top output line %s", line)
-
-    def sunos_disk_stats(self, data):
-        """
-        the data we send to logentries is expected to be in bytes
-        """
-
-        sd0 = call('kstat -n sd0 | egrep "nread|nwritten"')
-        sd1 = call('kstat -n sd1 | egrep "nread|nwritten"')
-        sd2 = call('kstat -n sd2 | egrep "nread|nwritten"')
-
-        reads = 0L
-        writes = 0L
-
-        for disk in [sd0, sd1, sd2]:
-            for line in disk.split("\n"):
-                parts = line.split()
-                if len(parts) != 2:
-                    continue
-                if not parts[1].isdigit():
-                    continue
-
-                if parts[0] == "nread":
-                    reads += long(parts[1])
-                elif parts[0] == "nwritten":
-                    writes += long(parts[1])
-
-        self.save_data(data, 'dr',
-                       reads - self.prev_disk_stats[0])
-        self.save_data(data, 'dw',
-                       writes - self.prev_disk_stats[1])
-        self.prev_disk_stats = [reads, writes]
-
-    def netstats_stats(self, data):
-        """
-        Read network bytes in/out from the output of "netstat -s"
-        Not exact, as on OS-X it doesn't display bytes for every protocol,
-        but more exact than using 'top' or 'netstat <interval>'
-        """
-        try:
-            proc = subprocess.Popen(['netstat', '-bi'],
-                                    stdout=subprocess.PIPE)
-        except:
-            return
-
-        # if we see 11 non-blank fields,
-        # #7 is input bytes, and #10 is output bytes, but avoid duplicate
-        # device lines
-
-        receive = 0L
-        transmit = 0L
-        netseen = {}
-
-        for line in proc.stdout:
-            if line.startswith('Name'):
-                continue
-
-            parts = line.split()
-            if len(parts) != 11:
-                continue
-            if parts[1] in netseen:
-                continue
-            if not parts[6].isdigit():
-                continue
-
-            receive += long(parts[6])
-            transmit += long(parts[9])
-            netseen[parts[0]] = 1
-
-        self.save_data(data, 'ni', receive - self.prev_net_stats[0])
-        self.save_data(data, 'no', transmit - self.prev_net_stats[1])
-        self.prev_net_stats = [receive, transmit]
-
-    def sunos_netstats_stats(self, data):
-        """
-        Read network bytes in/out from the output of "netstat -i"
-        Not exact, as on SunOS it doesn't display bytes for every protocol,
-        but more exact than using 'top' or 'netstat <interval>'
-        """
-        net0 = call('kstat -n net0 | grep "bytes64"')
-        net1 = call('kstat -n net1 | grep "bytes64"')
-
-        receive = 0L
-        transmit = 0L
-
-        for network in [net0, net1]:
-            for line in network.split("\n"):
-                parts = line.split()
-                if len(parts) != 2:
-                    continue
-                if not parts[1].isdigit():
-                    continue
-
-                if parts[0] == "ibytes64":
-                    receive += long(parts[1])
-                elif parts[0] == "obytes64":
-                    transmit += long(parts[1])
-
-        self.save_data(data, 'ni', receive - self.prev_net_stats[0])
-        self.save_data(data, 'no', transmit - self.prev_net_stats[1])
-        self.prev_net_stats = [receive, transmit]
-
-    def stats(self):
-        """Collects statistics."""
-        data = {}
-
-        if self.procfilesystem:
-            self.cpu_stats(data)
-            self.disk_stats(data)
-            self.mem_stats(data)
-            self.net_stats(data)
-        else:
-            if self.sys == "Darwin":
-                self.osx_top_stats(data)
-                self.netstats_stats(data)
-            if self.sys == "SunOS":
-                self.sunos_top_stats(data)
-                self.sunos_disk_stats(data)
-                self.sunos_netstats_stats(data)
-        return data
-
-    @staticmethod
-    def new_request(rq):
-        try:
-            response = api_request(
-                rq, silent=not config.debug, die_on_error=False)
-            if config.debug_stats:
-                log.info(response)
-        except socket.error:
-            pass
-
-    def schedule(self, next_step):
-        if not self.to_remove:
-            self.timer = threading.Timer(next_step, self.send_stats, ())
-            self.timer.daemon = True
-            self.timer.start()
-
-    def start(self):
-        self.schedule(1)
-
-    def send_stats(self):
-        """
-        Collects all statistics and sends them to Logentries.
-        """
-        ethalon = time.time()
-
-        results = self.stats()
-        results['request'] = RQ_WORKLOAD
-        results['host_key'] = config.agent_key
-        if config.debug_stats:
-            log.info(results)
-        if not self.first:
-            # Send data
-            if not config.datahub:
-                self.new_request(results)
-        else:
-            self.first = False
-
-        ethalon += EPOCH
-        next_step = (ethalon - time.time()) % EPOCH
-        self.schedule(next_step)
-
-    def cancel(self):
-        self.to_remove = True
-        if self.timer:
-            self.timer.cancel()
-
 class FollowMultilog(object):
     """
     The FollowMultilog is responsible for handling those logs that were set-up using the
@@ -2151,7 +1612,6 @@ class Config(object):
         self.entry_identifier = NOT_SET
         self.force = False
         self.hostname = NOT_SET
-        self.v1_metrics = NOT_SET
         self.name = NOT_SET
         self.no_timestamps = False
         self.pid_file = PID_FILE
@@ -2280,7 +1740,6 @@ class Config(object):
                 DATAHUB_PARAM: '',
                 SYSSTAT_TOKEN_PARAM: '',
                 HOSTNAME_PARAM: '',
-                V1_METRICS_PARAM: 'True',
                 PULL_SERVER_SIDE_CONFIG_PARAM: 'True',
                 INCLUDE_PARAM: '',
                 PROXY_TYPE_PARAM: '',
@@ -2328,7 +1787,6 @@ class Config(object):
             self.formatter = self._get_if_def(conf, self.formatter, FORMATTER_PARAM)
             self.entry_identifier = self._get_if_def(conf, self.entry_identifier, ENTRY_IDENTIFIER_PARAM)
             self.hostname = self._get_if_def(conf, self.hostname, HOSTNAME_PARAM)
-            self.v1_metrics = self._get_if_def(conf, self.v1_metrics, V1_METRICS_PARAM)
             if self.pull_server_side_config == NOT_SET:
                 new_pull_server_side_config = conf.get(MAIN_SECT, PULL_SERVER_SIDE_CONFIG_PARAM)
                 self.pull_server_side_config = new_pull_server_side_config == 'True'
@@ -2450,10 +1908,6 @@ class Config(object):
                 conf.set(MAIN_SECT, FORMATTERS_PARAM, self.formatters)
             if self.formatter != NOT_SET:
                 conf.set(MAIN_SECT, FORMATTER_PARAM, self.formatter)
-            if self.v1_metrics != NOT_SET:
-                conf.set(MAIN_SECT, V1_METRICS_PARAM, self.v1_metrics)
-            else:
-                conf.set(MAIN_SECT, V1_METRICS_PARAM, 'False')
             if self.hostname != NOT_SET:
                 conf.set(MAIN_SECT, HOSTNAME_PARAM, self.hostname)
             if self.suppress_ssl:
@@ -2679,7 +2133,7 @@ class Config(object):
                     debug-stats-only debug-cmd-line debug-system help version yes force uuid list
                     std std-all name= hostname= type= pid-file= debug no-defaults
                     suppress-ssl use-ca-provided force-api-host= force-domain=
-                    system-stat-token= datahub= legacy_v1_metrics
+                    system-stat-token= datahub=
                     pull-server-side-config= config= config.d= multilog debug-multilog"""
         try:
             optlist, args = getopt.gnu_getopt(params, '', param_list.split())
@@ -2714,8 +2168,6 @@ class Config(object):
                 self.name = value
             elif name == "--hostname":
                 self.hostname = value
-            elif name == "--legacy_v1_metrics":
-                self.v1_metrics = 'True'
             elif name == "--pid-file":
                 if value == '':
                     self.pid_file = None
@@ -3491,13 +2943,6 @@ def cmd_monitor(args):
     # Start default transport channel
     default_transport = DefaultTransport(config)
 
-    # Register resource monitoring
-    if config.agent_key != NOT_SET and config.v1_metrics != 'False':
-        log.debug("Enabling V1 metrics")
-        stats = Stats()
-        stats.start()
-    else:
-        log.debug("V1 metrics disabled")
     formatter = formats.FormatSyslog(config.hostname, 'le',
                                      config.metrics.token)
     smetrics = metrics.Metrics(config.metrics, default_transport,
@@ -3520,8 +2965,6 @@ def cmd_monitor(args):
 
     print >> sys.stderr, "\nShutting down"
     # Stop metrics
-    if stats:
-        stats.cancel()
     if smetrics:
         smetrics.cancel()
     # Close followers

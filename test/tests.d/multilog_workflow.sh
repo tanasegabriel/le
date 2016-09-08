@@ -69,7 +69,6 @@ touch apache-03/current
 
 $LE --debug-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Connecting to 127.0.0.1:8081
 #e Domain request: GET /f720fe54-879a-11e4-81ac-277d856f873e/hosts/9df0ea6f-36fa-820f-a6bc-c97da8939a06/ None {}
 #e List response: {"object": "loglist", "list": [{"name": "Apache", "key": "484d6e95-a4e1-42fe-820f-5a4c0824428c", "created": 1418711930412, "retention": -1, "follow": "true", "object": "log", "type": "agent", "filename": "Multilog:$TMP/apache*/current"}], "response": "ok"}

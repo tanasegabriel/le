@@ -523,7 +523,7 @@ For example, the following pattern identifies entries based on timestamp encoded
 	entry_identifier = \d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}
 
 
-System metrics (beta)
+System metrics
 ---------------------
 
 **Note:** The agent requires [psutil](https://github.com/giampaolo/psutil) library

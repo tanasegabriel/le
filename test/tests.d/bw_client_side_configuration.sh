@@ -21,7 +21,6 @@ cat "$CONFIG"
 #o [Main]
 #o user-key = f720fe54-879a-11e4-81ac-277d856f873e
 #o agent-key = 41ae887a-284a-4d78-91fe-56485b076148
-#o v1_metrics = False
 #o hostname = myhost
 #o metrics-mem = system
 #o metrics-token = 
@@ -44,7 +43,6 @@ touch example.log
 echo 'Skip this message' >> example.log
 $LE --debug-events monitor &
 #e Configuration files loaded: sandbox_config
-#e V1 metrics disabled
 #e Following $TMP/example.log
 #e Opening connection 127.0.0.1:10000 
 LE_PID=$!
