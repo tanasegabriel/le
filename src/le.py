@@ -2,6 +2,8 @@
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
 
+# FIXME - multilog version???
+
 #
 # Logentries Agent <https://logentries.com/>.
 #
@@ -44,6 +46,7 @@ USE_CA_PROVIDED_PARAM = 'use_ca_provided'
 FORCE_DOMAIN_PARAM = 'force_domain'
 DATAHUB_PARAM = 'datahub'
 SYSSTAT_TOKEN_PARAM = 'system-stat-token'
+STATE_FILE_PARAM = 'state-file'
 HOSTNAME_PARAM = 'hostname'
 TOKEN_PARAM = 'token'
 PATH_PARAM = 'path'
@@ -257,30 +260,31 @@ try:
 except ImportError:
     pass
 
-import string
-import re
-import Queue
-import random
 import ConfigParser
+import Queue
+import atexit
+import datetime
 import fileinput
 import getopt
+import getpass
 import glob
+import httplib
 import logging
 import os
 import os.path
 import platform
+import random
+import re
+import signal
 import socket
-import subprocess
 import stat
-import traceback
+import string
+import subprocess
 import sys
 import threading
 import time
-import datetime
+import traceback
 import urllib
-import httplib
-import getpass
-import atexit
 import logging.handlers
 from backports import CertificateError, match_hostname
 
@@ -961,6 +965,7 @@ class FollowMultilog(object):
                  entry_formatter,
                  entry_identifier,
                  transport,
+                 states,
                  max_num_followers=MAX_FILES_FOLLOWED ):
         """ Initializes the FollowMultilog. """
         self.name = name
@@ -970,6 +975,7 @@ class FollowMultilog(object):
         self.entry_identifier = entry_identifier
         self.transport = transport
 
+        self._states = states
         self._shutdown = False
         self._max_num_followers=max_num_followers
         self._followers = []
@@ -990,7 +996,7 @@ class FollowMultilog(object):
             return False
         return True
 
-    def _append_followers(self, add_files):
+    def _append_followers(self, add_files, states={}):
         for filename in add_files:
             if len(self._followers) < self._max_num_followers:
                 follower = Follower(filename,
@@ -998,10 +1004,11 @@ class FollowMultilog(object):
                                     self.entry_formatter,
                                     self.entry_identifier,
                                     self.transport,
+                                    states.get(filename),
                                     True)
                 self._followers.append(follower)
                 if config.debug_multilog:
-                    print >> sys.stderr, "Number of followers increased to: %s " %len(self._followers)
+                    print >> sys.stderr, "Number of followers increased to: %s" %len(self._followers)
             else:
                 log.debug("Warning: Allowed maximum of files that can be followed reached")
                 break
@@ -1012,7 +1019,7 @@ class FollowMultilog(object):
                 follower.close()
                 self._followers.remove(follower)
                 if config.debug_multilog:
-                    print >> sys.stderr, "Number of followers decreased to: %s " %len(self._followers)
+                    print >> sys.stderr, "Number of followers decreased to: %s" %len(self._followers)
 
     def close(self):
         """
@@ -1037,7 +1044,7 @@ class FollowMultilog(object):
         if len(start_set) == 0:
             log.error("FollowMultilog: no files found in OS to be followed")
         else:
-            self._append_followers(start_set)
+            self._append_followers(start_set, self._states)
         while not self._shutdown:
             time.sleep(RETRY_GLOB_INTERVAL)
             try:
@@ -1063,10 +1070,10 @@ class Follower(object):
                  entry_formatter,
                  entry_identifier,
                  transport,
+                 state,
                  disable_glob=False):
         """ Initializes the follower. """
         self.name = name
-        self.flush = True
         self.entry_filter = entry_filter
         self.entry_formatter = entry_formatter
         self.entry_identifier = entry_identifier
@@ -1074,6 +1081,7 @@ class Follower(object):
         # FollowMultilog usage
         self._disable_glob = disable_glob
 
+        self._load_state(state)
         self._file = None
         self._shutdown = False
         self._read_file_rest = ''
@@ -1082,6 +1090,25 @@ class Follower(object):
             target=self.monitorlogs, name=self.name)
         self._worker.daemon = True
         self._worker.start()
+
+    def get_state(self):
+        return self._state
+
+    def get_name(self):
+        return self.name
+
+    def _load_state(self, state):
+        if state:
+            self._update_state(state['filename'], state['position'])
+        else:
+            # -1 here means we'll seek to the end of the first file
+            self._update_state(None, -1)
+
+    def _update_state(self, real_name, file_position):
+        self._state = {
+            'filename': real_name,
+            'position': file_position,
+        }
 
     def _file_candidate(self):
         """
@@ -1101,24 +1128,41 @@ class Follower(object):
         except os.error:
             return None
 
-    def _open_log(self):
+    def _open_log(self, filename=None, position=0):
         """Keeps trying to re-open the log file. Returns when the file has been
-        opened or when requested to remove.  """
+        opened or when requested to remove.
+
+        filename, if specified, is name of a file that is being open on first attempt
+        position indicates the desired initial position, -1 means end of file
+        """
         error_info = True
         self.real_name = None
+        first_try = True
 
         while not self._shutdown:
             # FollowMultilog usage
             if self._disable_glob:
                 candidate = self.name
             else:
-                candidate = self._file_candidate()
+                if first_try and filename:
+                    candidate = filename
+                else:
+                    candidate = self._file_candidate()
 
             if candidate:
                 self.real_name = candidate
                 try:
                     self._close_log()
                     self._file = open(self.real_name)
+                    new_position = 0
+                    if first_try:
+                        if position == -1:
+                            self._set_file_position(0, FILE_END)
+                            new_position = self._get_file_position()
+                        elif position != 0:
+                            self._set_file_position(position)
+                            new_position = position
+                    self._update_state(self.real_name, new_position)
                     break
                 except IOError:
                     pass
@@ -1127,6 +1171,7 @@ class Follower(object):
                 log.info("Cannot open file '%s', re-trying in %ss intervals",
                          self.name, REOPEN_INT)
                 error_info = False
+            first_try = False
             time.sleep(REOPEN_TRY_INTERVAL)
 
     def _close_log(self):
@@ -1215,10 +1260,6 @@ class Follower(object):
         """Returns a block of newly detected line from the log. Returns None in
         case of timeout.
         """
-        # Moves at the end of the log file
-        if self.flush:
-            self._set_file_position(0, FILE_END)
-            self.flush = False
 
         # TODO: investigate select-like approach?
         idle_cnt = 0
@@ -1257,6 +1298,7 @@ class Follower(object):
                 # To reset end-of-line error
                 self._set_file_position(self._get_file_position())
 
+        self._update_state(self.real_name, self._get_file_position())
         return lines
 
     def _send_lines(self, lines):
@@ -1282,7 +1324,9 @@ class Follower(object):
 
     def monitorlogs(self):
         """ Opens the log file and starts to collect new events. """
-        self._open_log()
+        # If there is a predefined state, try to load it up
+        state = self.get_state()
+        self._open_log(state['filename'], state['position'])
         while not self._shutdown:
             try:
                 lines = self._get_lines()
@@ -1298,6 +1342,7 @@ class Follower(object):
                     log.error("Caught unknown error `%s' while sending lines %s", e, lines, exc_info=True)
             except Exception, e:
                 log.error("Caught unknown error `%s' while sending line", e, exc_info=True)
+        self._update_state(self.real_name, self._get_file_position())
         self._close_log()
 
 
@@ -1423,8 +1468,11 @@ class Transport(object):
 
     def _open_connection(self):
         """ Opens a push connection to logentries. """
-        log.debug("Opening connection %s:%s %s",
-                  self.endpoint, self.port, self.preamble.strip())
+        preamble = self.preamble.strip()
+        if preamble:
+            preamble = ' ' + preamble
+        log.debug("Opening connection %s:%s%s",
+                  self.endpoint, self.port, preamble)
         retry = 0
         delay = SRV_RECON_TO_MIN
         # Keep trying to open the connection
@@ -1623,6 +1671,7 @@ class Config(object):
         self.xlist = False
         self.yes = False
         self.multilog = False
+        self.state_file = NOT_SET
         # Behaviour associated with daemontools/multilog
 
         #proxy
@@ -1739,6 +1788,7 @@ class Config(object):
                 USE_CA_PROVIDED_PARAM: '',
                 DATAHUB_PARAM: '',
                 SYSSTAT_TOKEN_PARAM: '',
+                STATE_FILE_PARAM: '',
                 HOSTNAME_PARAM: '',
                 PULL_SERVER_SIDE_CONFIG_PARAM: 'True',
                 INCLUDE_PARAM: '',
@@ -1828,6 +1878,10 @@ class Config(object):
                     MAIN_SECT, SYSSTAT_TOKEN_PARAM)
                 if system_stats_token_str != '':
                     self.system_stats_token = system_stats_token_str
+            if self.state_file == NOT_SET:
+                state_file_str = conf.get(MAIN_SECT, STATE_FILE_PARAM)
+                if state_file_str:
+                    self.state_file = state_file_str
 
             self.metrics.load(conf)
 
@@ -2688,7 +2742,7 @@ def _init_entry_identifier(entry_identifier):
     except re.error:
         return None
 
-def start_followers(default_transport):
+def start_followers(default_transport, states):
     """
     Loads logs from the server (or configuration) and initializes followers.
     """
@@ -2843,10 +2897,10 @@ def start_followers(default_transport):
 
             # Instantiate the follow_multilog for 'multilog' filename, otherwise the individual follower
             if multilog_filename:
-                follow_multilog = FollowMultilog(log_filename, entry_filter, entry_formatter, entry_identifier, transport)
+                follow_multilog = FollowMultilog(log_filename, entry_filter, entry_formatter, entry_identifier, transport, states)
                 follow_multilogs.append(follow_multilog)
             else:
-                follower = Follower(log_filename, entry_filter, entry_formatter, entry_identifier, transport)
+                follower = Follower(log_filename, entry_filter, entry_formatter, entry_identifier, transport, states.get(log_filename))
                 followers.append(follower)
     return (followers, transports, follow_multilogs)
 
@@ -2919,6 +2973,59 @@ def create_configured_logs(configured_logs):
             clog.token = token
 
 
+def load_state(state_file):
+    if state_file:
+        try:
+            stat_file = open(state_file, 'r')
+            state_s = stat_file.read()
+            stat_file.close()
+
+            state = json.loads(state_s)
+            for name in state:
+                state[name]['filename']
+                state[name]['position']
+
+            return state
+        except IOError:
+            pass
+        except ValueError:
+            pass
+        except KeyError:
+            pass
+    return {} # Fallback
+
+
+def save_state(state_file, followers):
+    if state_file:
+        # Collect statees from all followers
+        states = {}
+        for follower in followers:
+            states[ follower.get_name()] = follower.get_state()
+        try:
+            # Save statees in state file
+            tmp_name = config.state_file + '.tmp'
+            sfile = open(tmp_name, 'w')
+            content = json_dumps(states, sort_keys=True, indent=2) + '\n'
+            sfile.write(content)
+            sfile.close()
+            # Update the state file
+            os.rename(tmp_name, config.state_file)
+        except IOError:
+            # Not too much we can do here
+            pass
+
+
+class TerminationNotifier(object):
+    terminate = False
+
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.signal_callback)
+        signal.signal(signal.SIGTERM, self.signal_callback)
+
+    def signal_callback(self, signum, frame):
+        self.terminate = True
+
+
 def cmd_monitor(args):
     """Monitors host activity and sends events collected to logentries
     infrastructure.
@@ -2952,14 +3059,20 @@ def cmd_monitor(args):
     followers = []
     transports = []
     follow_multilogs = []
+    terminate = TerminationNotifier()
     try:
+        state = load_state(config.state_file)
+
         # Load logs to follow and start following them
         if not config.debug_stats_only:
-            (followers, transports, follow_multilogs) = start_followers(default_transport)
+            (followers, transports, follow_multilogs) = start_followers(default_transport, state)
 
-        # Park this thread
-        while True:
-            time.sleep(600)  # FIXME: is there a better way?
+        # Periodically save state
+        while not terminate.terminate:
+            save_state(config.state_file, followers)
+
+            if config.state_file:
+                time.sleep(1)
     except KeyboardInterrupt:
         pass
 
@@ -2977,6 +3090,8 @@ def cmd_monitor(args):
     for transport in transports:
         transport.close()
     default_transport.close()
+    # Collect statuses
+    save_state(config.state_file, followers)
 
 
 def cmd_monitor_daemon(args):

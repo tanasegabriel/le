@@ -29,6 +29,9 @@ sleep 1
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
 
+#e
+#e Shutting down
+
 
 Testcase 'Default formatter for TCP input is syslog'
 
@@ -40,7 +43,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -52,6 +55,9 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
 
 Scenario 'Global formatter settings'
 
@@ -81,6 +87,9 @@ sleep 1
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
 
+#e
+#e Shutting down
+
 
 Testcase 'Setting global formatter affects TCP'
 
@@ -93,7 +102,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -105,6 +114,9 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
 
 
 Scenario 'Setting section formatter affects logs from that section'
@@ -121,7 +133,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -131,6 +143,6 @@ echo 'Second message' >> example.log
 #e 053f0e3c-f7a3-434c-91b2-446363f47a21Second message
 sleep 1
 
-kill $LE_PID
-wait $LE_PID 2>/dev/null || true
+#e
+#e Shutting down
 

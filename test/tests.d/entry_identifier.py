@@ -22,7 +22,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -39,6 +39,10 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
+
 
 
 
@@ -63,7 +67,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -83,6 +87,10 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
+
 
 
 
@@ -115,7 +123,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -129,6 +137,10 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
+
 
 
 Testcase 'Testing entry separator defined in global context'
@@ -150,7 +162,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -164,6 +176,10 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
+
 
 
 Testcase 'Testing entry separator precedence order'
@@ -186,7 +202,7 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -198,6 +214,6 @@ echo 'dabraLine 3' >> example.log
 #e 89caf699-8fb7-45b1-a41f-ae111ec99148<14>1 ISODATETIME myhost Web - - - abrakaLine 2 dabraLine 3
 sleep 1
 
-kill $LE_PID
-wait $LE_PID 2>/dev/null || true
+#e
+#e Shutting down
 

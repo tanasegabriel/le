@@ -47,7 +47,7 @@ $LE --debug-transport-events monitor --debug-formatters &
 #e  Looking for formatters by log name
 #e  Formatter found
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -59,6 +59,9 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
 
 
 Testcase 'Matching formatter based on log token'
@@ -84,7 +87,7 @@ $LE --debug-transport-events monitor --debug-formatters &
 #e  Looking for formatters by token
 #e  Formatter found
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000 
+#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -96,6 +99,9 @@ sleep 1
 
 kill $LE_PID
 wait $LE_PID 2>/dev/null || true
+
+#e
+#e Shutting down
 
 
 
@@ -131,6 +137,6 @@ echo 'Second message' >> example.log
 #e log_id myhost Log name 0  Second message
 sleep 1
 
-kill $LE_PID
-wait $LE_PID 2>/dev/null || true
+#e
+#e Shutting down
 
