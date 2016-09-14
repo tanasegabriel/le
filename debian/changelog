@@ -1,3 +1,19 @@
+logentries (1.4.38) wheezy jessie lucid precise quantal saucy trusty; urgency=low
+
+  [ Viliam Holub ]
+  * Info about SHA256 digest in Debian and Ubuntu
+  * Use long GPG keys
+  * Save file positions
+  * Fix template declaration
+  * Fix obsolete V1-metrics message
+
+  [ Stephen Hynes ]
+  * Remove v1 stats api
+
+  [ Logentries Team ]
+
+ -- Logentries Team <hello@logentries.com>  Wed, 14 Sep 2016 16:42:29 +0000
+
 logentries (1.4.37) wheezy jessie lucid precise quantal saucy trusty; urgency=low
 
   [ Viliam Holub ]
