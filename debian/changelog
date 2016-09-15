@@ -1,3 +1,13 @@
+logentries (1.4.39) wheezy jessie lucid precise quantal saucy trusty; urgency=low
+
+  [ Viliam Holub ]
+  * Avoid close cycle if state file is not specified
+  * Sync with currently supported systems
+
+  [ Logentries Team ]
+
+ -- Logentries Team <hello@logentries.com>  Thu, 15 Sep 2016 08:52:58 +0000
+
 logentries (1.4.38) wheezy jessie lucid precise quantal saucy trusty; urgency=low
 
   [ Viliam Holub ]
