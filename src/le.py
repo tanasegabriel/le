@@ -3071,8 +3071,7 @@ def cmd_monitor(args):
         while not terminate.terminate:
             save_state(config.state_file, followers)
 
-            if config.state_file:
-                time.sleep(1)
+            time.sleep(1)
     except KeyboardInterrupt:
         pass
 
