@@ -19,44 +19,11 @@ Debian 7.0 Wheezy
 	exit
 
 
-Debian 8.0 Jessie/SID
+Debian 8.0 Jessie
 ---------------------
 
 	su -
 	echo 'deb http://rep.logentries.com/ jessie main' >/etc/apt/sources.list.d/logentries.list
-	gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys A5270289C43C79AD && gpg -a --export A5270289C43C79AD | apt-key add -
-	aptitude update
-	aptitude install logentries
-	exit
-
-
-Ubuntu 11.10 Oneiric Ocelot
------------------------------
-
-	sudo -sH
-	echo 'deb http://rep.logentries.com/ oneiric main' >/etc/apt/sources.list.d/logentries.list
-	gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys A5270289C43C79AD && gpg -a --export A5270289C43C79AD | apt-key add -
-	apt-get update
-	apt-get install logentries
-	exit
-
-
-Ubuntu 13.04 Raring Ringtail
------------------------------
-
-	sudo -sH
-	echo 'deb http://rep.logentries.com/ raring main' >/etc/apt/sources.list.d/logentries.list
-	gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys A5270289C43C79AD && gpg -a --export A5270289C43C79AD | apt-key add -
-	apt-get update
-	apt-get install logentries
-	exit
-
-
-Ubuntu 13.10 Saucy Salamander
------------------------------
-
-	sudo -sH
-	echo 'deb http://rep.logentries.com/ saucy main' >/etc/apt/sources.list.d/logentries.list
 	gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys A5270289C43C79AD && gpg -a --export A5270289C43C79AD | apt-key add -
 	aptitude update
 	aptitude install logentries
