@@ -12,6 +12,11 @@ $ chmod +x install.sh
 $ sudo ./install.sh
 ```
 
+Alternatively you can install the Agent with brew.
+```shell
+brew install logentries
+```
+
 Removal
 -------
 
@@ -26,4 +31,9 @@ Then remove the executable:
 
 ```shell
 $ sudo rm /usr/bin/le
+```
+
+If you installed the Agent via brew you need to run the following.
+```shell
+brew uninstall logentries
 ```
