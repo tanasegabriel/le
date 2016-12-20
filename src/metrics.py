@@ -64,6 +64,7 @@ class CpuMetrics(object):
         nice = curr.nice - last.nice
         system = curr.system - last.system
         idle = curr.idle - last.idle
+        total_idle = idle
         iowait = curr.iowait - last.iowait
         irq = curr.irq - last.irq
         softirq = curr.softirq - last.softirq
@@ -75,16 +76,17 @@ class CpuMetrics(object):
             steal = 0
             guest = 0
             guest_nice = 0
-        xsum = user + nice + system + idle + iowait + \
-            irq + softirq + steal + guest + guest_nice
+        total_cpu = user + nice + system + idle + iowait + \
+            irq + softirq + steal
         if per_core:
-            fraction = vcpus / xsum * 100
+            fraction = vcpus / total_cpu * 100
         else:
-            fraction = 1 / xsum * 100
+            fraction = 1 / total_cpu * 100
         user *= fraction
         nice *= fraction
         system *= fraction
-        idle *= fraction
+        usage = (total_cpu - total_idle) * fraction
+        idle = 100.0 - usage
         iowait *= fraction
         irq *= fraction
         softirq *= fraction
@@ -96,8 +98,8 @@ class CpuMetrics(object):
         else:
             xvcpu = ''
         return '%suser=%.1f nice=%.1f system=%.1f usage=%.1f idle=%.1f iowait=%.1f irq=%.1f softirq=%.1f steal=%.1f guest=%.1f guest_nice=%.1f vcpus=%d\n' % (
-                xvcpu, user, nice, system, user + nice + system + irq + softirq + guest,
-                idle, iowait, irq, softirq, steal, guest, guest_nice, vcpus)
+                xvcpu, user, nice, system, usage, idle, iowait, irq, \
+                softirq, steal, guest, guest_nice, vcpus)
 
     def collect(self):
         curr = psutil.cpu_times()
