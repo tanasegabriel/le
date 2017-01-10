@@ -607,7 +607,10 @@ class MetricsConfig(object):
                     try:
                         token = conf.get(section, PREFIX + TOKEN)
                     except ConfigParser.NoOptionError:
-                        token = ''
+                        try:
+                            token = conf.get(section, TOKEN)
+                        except ConfigParser.NoOptionError:
+                            token = ''
                     pattern = conf.get(section, PREFIX + PROCESS)
                     self.processes.append([section, pattern, token])
                 except ConfigParser.NoOptionError:
