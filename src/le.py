@@ -2,8 +2,6 @@
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
 
-# FIXME - multilog version???
-
 #
 # Logentries Agent <https://logentries.com/>.
 #
@@ -1342,7 +1340,8 @@ class Follower(object):
                     log.error("Caught unknown error `%s' while sending lines %s", e, lines, exc_info=True)
             except Exception, e:
                 log.error("Caught unknown error `%s' while sending line", e, exc_info=True)
-        self._update_state(self.real_name, self._get_file_position())
+        if self._file:
+            self._update_state(self.real_name, self._get_file_position())
         self._close_log()
 
 
@@ -1918,7 +1917,7 @@ class Config(object):
                 try:
                     path = conf.get(name, PATH_PARAM)
                 except ConfigParser.NoOptionError:
-                    log.warning("Note: Required parameter `%s' not found in application `%s', skipping this application", PATH_PARAM, name)
+                    log.debug("Not following logs for application `%s' as `%s' parameter is not specified", name, PATH_PARAM)
                     continue
 
                 destination = ''
@@ -2742,7 +2741,7 @@ def _init_entry_identifier(entry_identifier):
     except re.error:
         return None
 
-def start_followers(default_transport, states):
+def start_followers(default_transport, states, terminate):
     """
     Loads logs from the server (or configuration) and initializes followers.
     """
@@ -2755,7 +2754,7 @@ def start_followers(default_transport, states):
     if config.pull_server_side_config:
         # Use LE server as the source for list of followed logs
         server_logs = []
-        while not server_logs:
+        while not server_logs and not terminate.terminate:
             resp = request('hosts/%s/' %
                            config.agent_key, False, False, retry=True)
             if resp['response'] != 'ok':
@@ -2957,7 +2956,7 @@ def create_configured_logs(configured_logs):
     """
     for clog in configured_logs:
         if not clog.destination and not clog.token:
-            log.error('Ignoring section %s as neither %s nor %s is specified', clog.name, TOKEN_PARAM, DESTINATION_PARAM)
+            log.debug("Not following logs for application `%s' as neither `%s' nor `%s' parameter is specified", clog.name, TOKEN_PARAM, DESTINATION_PARAM)
             continue
 
         if clog.destination and not clog.token:
@@ -3065,7 +3064,7 @@ def cmd_monitor(args):
 
         # Load logs to follow and start following them
         if not config.debug_stats_only:
-            (followers, transports, follow_multilogs) = start_followers(default_transport, state)
+            (followers, transports, follow_multilogs) = start_followers(default_transport, state, terminate)
 
         # Periodically save state
         while not terminate.terminate:
