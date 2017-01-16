@@ -537,9 +537,6 @@ def daemonize():
     if err:
         die("%s" % err)
 
-    # Setting the proctitle
-    set_proc_title('logentries-daemon')
-
     # Logging for daemon mode
     log.removeHandler(stream_handler)
     shandler = logging.StreamHandler()
