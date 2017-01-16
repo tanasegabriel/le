@@ -436,14 +436,7 @@ class Metrics(object):
     def __init__(self, conf, default_transport, formatter, debug):
         """Creates an instance of metrics from the configuration."""
         self._ready = False
-        if not psutil_available:
-            if debug:
-                report("Warning: Cannot instantiate metrics, psutil library is not available.")
-            return
-        if not conf.token:
-            if debug:
-                report("Warning: Cannot instantiate metrics, token not specified.")
-            return
+        self._token = conf.token
 
         if debug and not default_transport:
             self._transport = StderrTransport(None)
@@ -460,7 +453,14 @@ class Metrics(object):
         if self._interval == 0:
             report("Warning: Cannot instantiate metrics, invalid interval `%s'." % conf.interval)
 
-        self._items = self._instantiate(conf)
+        if psutil_available:
+            self._items = self._instantiate_system(conf, debug) + self._instantiate_processes(conf, debug)
+        else:
+            if debug:
+                report("Warning: Cannot instantiate system metrics, psutil library is not available.")
+            self._items = []
+            return
+
         self._ready = True
 
     def _parse_interval(self, interval):
@@ -479,7 +479,11 @@ class Metrics(object):
             return 0
         return value
 
-    def _instantiate(self, conf):
+    def _instantiate_system(self, conf, debug):
+        if not conf.token:
+            if debug:
+                report("Warning: Cannot instantiate system metrics, token not specified.")
+            return []
         items = []
         if conf.cpu:
             if conf.cpu in ['core', 'system']:
@@ -508,8 +512,18 @@ class Metrics(object):
         if conf.net:
             items.append(NetMetrics(conf.net, self._interval, self._transport, self._formatter))
 
+        return items
+
+    def _instantiate_processes(self, conf, debug):
+        items = []
         for process in conf.processes:
-            items.append(ProcMetrics(process[0], process[1], process[2], self._interval, self._transport, self._formatter))
+            name = process[0]
+            token = process[2]
+            if not token:
+                if debug:
+                    report("Warning: Cannot instantiate metrics for `%s', token not specified." % name)
+            else:
+                items.append(ProcMetrics(name, process[1], token, self._interval, self._transport, self._formatter))
 
         return items
 
@@ -538,9 +552,10 @@ class Metrics(object):
         self._schedule(ethalon)
 
     def _collect_info(self):
-        line = "agent_version=%s\n" % __version__
-        self._transport.send(
-                self._formatter.format_line(line, msgid='start'))
+        if self._token:
+            line = "agent_version=%s\n" % __version__
+            self._transport.send(
+                    self._formatter.format_line(line, msgid='start'))
 
     def start(self):
         if self._ready:

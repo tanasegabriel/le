@@ -483,7 +483,7 @@ def _try_daemonize():
         pid = None
     if pid:
         if not os.path.exists('/proc') or os.path.exists("/proc/%d/status" % pid):
-            return "Pidfile %s already exist. Daemon already running?" % config.pid_file
+            return "Pidfile %s already exists. Daemon already running?" % config.pid_file
 
     try:
         # Open pid file
