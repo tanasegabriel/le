@@ -25,7 +25,6 @@ echo 'Message 1 (skipped)' >> example.log
 $LE --debug-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 2
@@ -52,7 +51,6 @@ sync
 $LE --debug-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 #e Message 4 (not to be lost)

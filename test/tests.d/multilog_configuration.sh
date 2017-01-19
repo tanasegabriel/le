@@ -51,7 +51,6 @@ touch apache-03/current
 $LE --debug-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/apache*/current
-#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1

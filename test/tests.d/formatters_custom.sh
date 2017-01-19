@@ -20,7 +20,6 @@ touch example.log
 $LE --debug-transport-events monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
