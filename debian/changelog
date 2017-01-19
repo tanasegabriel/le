@@ -1,3 +1,21 @@
+logentries (1.4.41) wheezy jessie lucid precise quantal saucy trusty; urgency=low
+
+  [ Stephen Hynes ]
+  * Update mac install instructions
+
+  [ Viliam Holub ]
+  * Remove guest and guest_nice from total cpu time
+  * Accept application token for process metrics
+  * Handle termination conditions gracefully; improve log messages for sections that do not contain path and token parameters
+  * Fix spelling in pidfile error message
+  * Allow process-only metrics
+  * Avoid changing process title
+  * Avoid race condition in tests
+
+  [ Logentries Team ]
+
+ -- Logentries Team <hello@logentries.com>  Thu, 19 Jan 2017 15:10:49 +0000
+
 logentries (1.4.40) wheezy jessie lucid precise quantal saucy trusty; urgency=low
 
   [ Stephen Hynes ]
