@@ -54,7 +54,6 @@ touch apache-03/current
 $LE --debug-events --debug-multilog monitor &
 #e Configuration files loaded: sandbox_config
 #e Following $TMP/apache*/current
-#e Opening connection 127.0.0.1:10000
 #e Number of followers increased to: 1
 #e Number of followers increased to: 2
 #e Number of followers increased to: 3

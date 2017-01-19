@@ -47,7 +47,6 @@ $LE --debug-transport-events monitor --debug-formatters &
 #e  Looking for formatters by log name
 #e  Formatter found
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1
@@ -87,7 +86,6 @@ $LE --debug-transport-events monitor --debug-formatters &
 #e  Looking for formatters by token
 #e  Formatter found
 #e Following $TMP/example.log
-#e Opening connection 127.0.0.1:10000
 LE_PID=$!
 
 sleep 1

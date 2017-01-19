@@ -46,8 +46,10 @@ for A in ${TESTS[*]} ; do
 		sed -i "s!%$key%!${TEMPLATES[$key]}!g" $EXPECTED_STDOUT
 	done
 
-
 	bash $A >"$REAL_STDOUT" 2>"$REAL_STDERR" || true
+
+	# Remove messages known to be prone to race conditions
+	sed -i '/Opening connection 127\.0\.0\.1:10000/d' "$REAL_STDERR"
 
 	# From output replace any ISO dates
 	sed -i 's/20[0-9]\{2\}-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-6][0-9]\.[0-9]\{6\}Z\?/ISODATETIME/g' "$REAL_STDERR"
