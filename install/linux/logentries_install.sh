@@ -149,7 +149,7 @@ EOL
 
 	# Check for agent executable
 	if [ ! -f /usr/bin/le ];then
-		echo $AGENT_NOT_FOUND
+		echo -e $AGENT_NOT_FOUND
 		exit 1
 	fi
 
@@ -227,7 +227,7 @@ elif [ -f /etc/debian_version ]; then
 
 	# Check if agent executable exists before trying to register
 	if [ ! -f /usr/bin/le ];then
-		echo $AGENT_NOT_FOUND
+		echo -e $AGENT_NOT_FOUND
 		exit 1
 	fi
 
@@ -281,7 +281,8 @@ EOL
 
 	# Check that agent executable exists before trying to register
 	if [ ! -f /usr/bin/le ];then
-		echo $AGENT_NOT_FOUND
+		echo -e $AGENT_NOT_FOUND
+		exit 1
 	fi
 
 	echo "\n"
@@ -322,7 +323,8 @@ elif [ -f /etc/gentoo-release ] ; then
 
 	# Check that agent executable exists before trying to register
 	if [ ! -f /usr/bin/le ] ; then
-		echo $AGENT_NOT_FOUND
+		echo -e $AGENT_NOT_FOUND
+		exit 1
 	fi
 
 	echo "\n"
