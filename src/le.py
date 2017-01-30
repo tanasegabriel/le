@@ -1064,7 +1064,7 @@ class FollowMultilog(object):
             try:
                 current_set = set([filename for filename in glob.glob(self.name)])
             except os.error:
-                log.error("Error: FollowerMultiple glob has failed")
+                log.error("FollowerMultiple glob has failed")
             followed_files = [follower.name for follower in self._followers]
             added_files = [filename for filename in current_set if not filename in followed_files]
             self._append_followers(added_files)
@@ -2154,11 +2154,10 @@ class Config(object):
                 pname_slice = args[1:]
                 # Validate that a pathname is detected in parameters to agent
                 if len(pname_slice) == 0:
-                    die("\nError: No pathname detected - Specify the path to the file to be followed\n"
-                        + MULTILOG_USAGE, EXIT_OK)
+                    die("Error: No pathname detected - Specify the path to the file to be followed\n" + MULTILOG_USAGE, EXIT_OK)
                 # Validate that agent is not receiving a list of pathnames (possibly shell is expanding wildcard)
                 if len(pname_slice) > 1:
-                    die("\nError: Too many arguments being passed to agent\n" + MULTILOG_USAGE, EXIT_OK)
+                    die("Error: Too many arguments being passed to agent\n" + MULTILOG_USAGE, EXIT_OK)
                 pname = str(pname_slice[0])
         elif not cmd_line and path is None:
             # For anything not coming in on command line no output is written to command line
@@ -2173,7 +2172,7 @@ class Config(object):
                 log.error("Error: No filename detected in the pathname")
                 return False
             else:
-                die("\nError: No filename detected - Specify the filename to be followed\n" + MULTILOG_USAGE, EXIT_OK)
+                die("Error: No filename detected - Specify the filename to be followed\n" + MULTILOG_USAGE, EXIT_OK)
         # Check if a wildcard detected in pathname
         if '*' in pname:
             # Verify that only one wildcard is in pathname
@@ -2182,14 +2181,14 @@ class Config(object):
                     log.error("Error: More then one wildcard * detected in pathname")
                     return False
                 else:
-                    die("\nError: Only one wildcard * allowed\n" + MULTILOG_USAGE, EXIT_OK)
+                    die("Error: Only one wildcard * allowed\n" + MULTILOG_USAGE, EXIT_OK)
             # Verify that no wildcard is in filename
             if '*' in filename:
                 if not cmd_line:
                     log.error("Error: Wildcard detected in filename of path argument")
                     return False
                 else:
-                    die("\nError: No wildcard * allowed in filename\n" + MULTILOG_USAGE, EXIT_OK)
+                    die("Error: No wildcard * allowed in filename\n" + MULTILOG_USAGE, EXIT_OK)
         return True
 
     def process_params(self, params):
@@ -2371,13 +2370,13 @@ def api_request(request, required=False, check_status=False, silent=False, die_o
     # Check the response
     if not response:
         if required:
-            die("Error: Cannot process LE request, no response")
+            error("Cannot process LE request, no response")
         if conn:
             conn.close()
         return None
     if response.status != 200:
         if required:
-            die("Error: Cannot process LE request: (%s)" % response.status)
+            error("Cannot process LE request: (%s)", response.status)
         conn.close()
         return None
 
@@ -2425,7 +2424,7 @@ def api_v2_request(method, url, request, required=False, silent=False, die_on_er
     # Check the response
     if not response:
         if required:
-            die("Error: Cannot process LE request, no response")
+            error("Cannot process LE request, no response")
         if conn:
             conn.close()
         return None
@@ -2447,17 +2446,16 @@ def api_v2_request(method, url, request, required=False, silent=False, die_on_er
             log.info(error)
             d_response = None
 
-    if response.status not in [200, 201, 204]:
+    if response.status not in [httplib.OK, httplib.CREATED, httplib.NO_CONTENT]:
         reason = ''
         if 'reason' in d_response:
             reason = d_response['reason']
         if required:
             if reason:
-                die("Error: %s" % reason)
+                error("%s" % reason)
             else:
-                die("Error: Cannot process LE request: (%s)" % response.status)
+                error("Cannot process LE request: (%s)", response.status)
         return None
-
 
     return d_response
 
@@ -2475,11 +2473,11 @@ def pull_request(what, params):
 
     # Check the response
     if not response:
-        die("Error: Cannot process LE request, no response")
+        error("Cannot process LE request, no response")
     if response.status == 404:
-        die("Error: Log not found")
+        error("Log not found")
     if response.status != 200:
-        die("Error: Cannot process LE request: (%s)" % response.status)
+        error("Cannot process LE request: (%s)", response.status)
 
     while True:
         data = response.read(65536)
@@ -2504,7 +2502,7 @@ def request(request, required=False, check_status=False, rtype='GET', retry=Fals
         if response:
             break
         if required:
-            die('Error: Cannot process LE request, no response')
+            error('Cannot process LE request, no response')
         if retry:
             if not noticed:
                 log.info('Error: No response from LE, re-trying in %ss intervals',
@@ -2520,10 +2518,10 @@ def request(request, required=False, check_status=False, rtype='GET', retry=Fals
     try:
         d_response = json_loads(response)
     except ValueError:
-        die('Error: Invalid response (%s)' % response)
+        error('Invalid response (%s)', response)
 
     if check_status and d_response['response'] != 'ok':
-        die('Error: %s' % d_response['reason'])
+        error('%s', '%s' % d_response['reason'])
 
     return d_response
 
@@ -3176,7 +3174,7 @@ def cmd_follow(args):
     Follow the log file given.
     """
     if len(args) == 0:
-        die("Error: Specify the file name of the log to follow.")
+        error("Specify the file name of the log to follow.")
     if len(args) > 1:
         die("Error: Too many arguments.\n"
             "A common mistake is to use wildcards in path that is being "
@@ -3213,7 +3211,7 @@ def cmd_follow_multilog(args):
     the '--multilog' parameter included - modification of cmd_follow
     """
     if len(args) == 0:
-        die("Error: Specify the file name of the log to follow.")
+        error("Specify the file name of the log to follow.")
     if len(args) > 1:
         die("Error: Too many arguments.\n"
             "A common mistake is to use wildcards in path that is being "
@@ -3282,9 +3280,9 @@ def cmd_followed(args):
     Check if the log file given is followed.
     """
     if len(args) == 0:
-        die("Error: Specify the file name of the log to test.")
+        error("Specify the file name of the log to test.")
     if len(args) != 1:
-        die("Error: Too many arguments. Only one file name allowed.")
+        error("Too many arguments. Only one file name allowed.")
     config.load()
     config.agent_key_required()
 
@@ -3443,22 +3441,6 @@ def cmd_ls_structures():
         print >> sys.stderr, '1 structure'
     else:
         print >> sys.stderr, '%s structures' % len(structures)
-
-
-def cmp_patterns(a, b):
-    """
-    Intuitive comparison of two patterns.
-    """
-    v = cmp(a['priority'], b['priority'])
-    if v == 0:
-        ap = a['pattern'].lower()
-        if ap.endswith('/'):
-            ap = ap[:-1]
-        bp = b['pattern'].lower()
-        if bp.endswith('/'):
-            bp = bp[:-1]
-        v = cmp(ap, bp)
-    return v
 
 
 def cmd_ls_patterns(structure_name):
@@ -3812,7 +3794,7 @@ def main_root():
                 return cmd_follow_multilog(args[1:])
             else:
                 return func(args[1:])
-    die('Error: Unknown command "%s".' % args[0])
+    error('Unknown command "%s".', args[0])
 
 
 def main():

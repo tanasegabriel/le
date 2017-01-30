@@ -41,7 +41,7 @@ __all__ = ["EXIT_OK", "EXIT_NO", "EXIT_HELP", "EXIT_ERR", "EXIT_TERMINATED",
            "ServerHTTPSConnection", "LOG_LE_AGENT", "create_conf_dir",
            "default_cert_file", "system_cert_file", "domain_connect",
            "no_more_args", "find_hosts", "find_logs", "find_api_obj_by_key", "find_api_obj_by_name", "die",
-           "error",
+           "error", "cmp_patterns",
            "rfile", 'TCP_TIMEOUT', "rm_pidfile", "uuid_parse", "report",
            "colored", "c_param", "c_id"]
 
@@ -409,7 +409,7 @@ def find_api_obj_by_key(obj_list, key):
 
 
 def die(cause, exit_code=EXIT_ERR):
-    log.critical(cause)
+    log.critical('%s', cause)
     sys.exit(exit_code)
 
 def error(cause, *args):
@@ -472,3 +472,20 @@ def get_bundled_certs():
     file_name = os.path.join(os.path.dirname(__file__), "cacert.pem")
     with open(file_name) as r:
         return r.read()
+
+
+def cmp_patterns(a, b):
+    """
+    Intuitive comparison of two patterns.
+    """
+    v = cmp(a['priority'], b['priority'])
+    if v == 0:
+        ap = a['pattern'].lower()
+        if ap.endswith('/'):
+            ap = ap[:-1]
+        bp = b['pattern'].lower()
+        if bp.endswith('/'):
+            bp = bp[:-1]
+        v = cmp(ap, bp)
+    return v
+
