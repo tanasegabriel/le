@@ -3573,16 +3573,13 @@ def cmd_add_structure(args):
             print >> sys.stderr, 'Structure `%s\' already exists' % structure_name
 
     # Add pattern (if specified)
+    # TODO - check that the pattern does not exist already
     if pattern:
-
-        # TODO - check that the pattern does not exist already
-
         response = api_v2_request('POST', 'structures/%s/patterns'%structure_id, {
             'priority': priority,
             'pattern': pattern,
             }, True)
         print >> sys.stderr, 'Added pattern `%s\'' % pattern
-
 
 
 def cmd_add(args):
@@ -3614,7 +3611,8 @@ def cmd_rm_pattern(patterns, structure_name, structure_id):
 
     # Go though patterns one by one, identify pattern IDs
     # Use a different call for pattern=*
-    matches = [[p['id'], p['pattern']] for p in patterns if rm_all or p['id'] == pattern or p['pattern'].startswith(pattern)]
+    matches = [[p['id'], p['pattern']] for p in patterns \
+            if rm_all or p['id'] == pattern or p['pattern'].startswith(pattern)]
     if not matches:
         if rm_all:
             print >> sys.stderr, 'No pattern to be removed; structure is empty'
@@ -3653,7 +3651,7 @@ def cmd_rm_structure(args):
     if not structure_name:
         error('No structure name specified (append structure name)')
 
-    # Not args contain structure name or ID and an optional pattern
+    # Note args contain structure name or ID, and an optional pattern
 
     config.load()
     config.user_key_required(True)
