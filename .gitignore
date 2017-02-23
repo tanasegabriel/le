@@ -6,3 +6,6 @@ lecheck
 *.egg-info
 /.idea
 /test/env
+/build
+/dist
+.tox

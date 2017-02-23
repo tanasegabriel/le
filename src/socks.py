@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 """SocksiPy - Python SOCKS module.
 Version 1.00
 

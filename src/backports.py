@@ -1,3 +1,4 @@
+# pylint: skip-file
 """
 Python License (Python-2.0)
 
@@ -52,8 +53,8 @@ agrees to be bound by the terms and conditions of this License
 Agreement
 """
 
-""" This file was downloaded via https://pypi.python.org/pypi/backports.ssl_match_hostname """
-"""The match_hostname() function from Python 3.3.3, essential when using SSL."""
+#This file was downloaded via https://pypi.python.org/pypi/backports.ssl_match_hostname
+#The match_hostname() function from Python 3.3.3, essential when using SSL.
 
 import re
 
@@ -63,7 +64,7 @@ class CertificateError(ValueError):
     pass
 
 
-def _dnsname_match(dn, hostname, max_wildcards=1):
+def _dnsname_match(dn, hostname, max_wildcards=1): #pylint: disable=invalid-name
     """Matching according to RFC 6125, section 6.4.3
 
     http://tools.ietf.org/html/rfc6125#section-6.4.3
@@ -84,8 +85,7 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
         # than one wildcard per fragment.  A survey of established
         # policy among SSL implementations showed it to be a
         # reasonable choice.
-        raise CertificateError(
-            "too many wildcards in certificate DNS name: " + repr(dn))
+        raise CertificateError("too many wildcards in certificate DNS name: " + repr(dn))
 
     # speed up common case w/o wildcards
     if not wildcards:
@@ -145,13 +145,10 @@ def match_hostname(cert, hostname):
                         return
                     dnsnames.append(value)
     if len(dnsnames) > 1:
-        raise CertificateError("hostname %r "
-            "doesn't match either of %s"
-            % (hostname, ', '.join(map(repr, dnsnames))))
+        raise CertificateError("hostname %r doesn't match either of %s"
+                               % (hostname, ', '.join(map(repr, dnsnames))))
     elif len(dnsnames) == 1:
-        raise CertificateError("hostname %r "
-            "doesn't match %r"
-            % (hostname, dnsnames[0]))
+        raise CertificateError("hostname %r doesn't match %r"
+                               % (hostname, dnsnames[0]))
     else:
-        raise CertificateError("no appropriate commonName or "
-            "subjectAltName fields were found")
+        raise CertificateError("no appropriate commonName or subjectAltName fields were found")

@@ -1,15 +1,13 @@
-
+"""Formats Module"""
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
-
-__author__ = 'Logentries'
-
-__all__ = ['FormatPlain', 'FormatSyslog', 'get_formatter']
-
 
 import datetime
 import socket
 import string
+__author__ = 'Logentries'
+
+__all__ = ['FormatPlain', 'FormatSyslog', 'get_formatter']
 
 
 class FormatPlain(object):
@@ -19,6 +17,7 @@ class FormatPlain(object):
         self._token = token
 
     def format_line(self, line):
+        """Formats the given line"""
         return self._token + line
 
 
@@ -35,9 +34,10 @@ class FormatSyslog(object):
         self._token = token
 
     def format_line(self, line, msgid='-', token=None):
+        """Formats the given syslog line"""
         if not token:
             token = self._token
-        return '%s<14>1 %sZ %s %s - %s - %s'%(
+        return '%s<14>1 %sZ %s %s - %s - %s' % (
             token, datetime.datetime.utcnow().isoformat('T'),
             self._hostname, self._appname,
             msgid, line)
@@ -57,6 +57,7 @@ class FormatCustom(object):
         self._template = string.Template(token + self._pattern)
 
     def format_line(self, line):
+        """Formats the given line in a custom format"""
         # Convert the pattern into output string
         # this is performance sub-optimal
         return self._template.substitute({
@@ -65,6 +66,7 @@ class FormatCustom(object):
             'appname': self._appname,
             'line': line
             })
+
 
 def get_formatter(definition, hostname, log_name, log_token):
     """Instantiates formatter defined by its name or pattern.
@@ -82,8 +84,8 @@ def get_formatter(definition, hostname, log_name, log_token):
     # Formatter not found
     return None
 
+
 def _sanitize_syslog_name(original):
     """Replaces invalid characters from syslog name entry.
     """
     return original.decode('utf8', 'ignore').replace(' ', '_')
-
