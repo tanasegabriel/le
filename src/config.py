@@ -6,14 +6,13 @@ import os
 import socket
 import stat
 import getopt
-import ConfigParser
-import metrics
+import configparser as ConfigParser
 
-
-import utils
-from log import log
-from configured_log import ConfiguredLog
-from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+from . import metrics
+from . import utils
+from .log import log
+from .configured_log import ConfiguredLog
+from .constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET

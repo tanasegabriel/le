@@ -3,8 +3,9 @@ import string
 import datetime
 import time
 import re
-from constants import DAY, MON, YEAR, SEC, MIN, HOUR
-from utils import die
+
+from .constants import DAY, MON, YEAR, SEC, MIN, HOUR
+from .utils import die
 
 
 def date_patterns():

@@ -1,5 +1,5 @@
 """Constants Module"""
-from __init__ import __version__
+from .__init__ import __version__
 
 NOT_SET = None
 
@@ -8,7 +8,7 @@ CORP = "logentries"
 ACCOUNT_KEYS_API = '/agent/account-keys/'
 ID_LOGS_API = '/agent/id-logs/'
 
-LINE_SEPARATOR = '\xe2\x80\xa8'.decode('utf8')
+LINE_SEPARATOR = '\xe2\x80\xa8'
 
 # Maximal queue size for events sent
 SEND_QUEUE_SIZE = 32000

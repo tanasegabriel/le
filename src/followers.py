@@ -7,8 +7,8 @@ import glob
 import time
 
 
-from log import log
-from constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
+from .log import log
+from .constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \
     LINE_SEPARATOR, NAME_CHECK, FOLLOWER_JOIN_INTERVAL, \
     RETRY_GLOB_INTERVAL, MAX_FILES_FOLLOWED, FOLLOWMULTI_JOIN_INTERVAL
@@ -174,7 +174,8 @@ class Follower(object):
 
     def _read_log_lines(self):
         """ Reads a block of lines from the log. Checks maximal line size. """
-        buff = self._file.read(MAX_BLOCK_SIZE - len(self._read_file_rest))
+        size_hint = MAX_BLOCK_SIZE - len(self._read_file_rest)
+        buff = self._file.read(size_hint)
         buff_lines = buff.split('\n')
         if len(self._read_file_rest) > 0:
             buff_lines[0] = self._read_file_rest + buff_lines[0]
@@ -186,7 +187,7 @@ class Follower(object):
             buff_lines.append(self._read_file_rest[:MAX_BLOCK_SIZE])
             self._read_file_rest = self._read_file_rest[MAX_BLOCK_SIZE:]
 
-        return [line.decode('utf-8', 'ignore') for line in buff_lines[:-1]]
+        return [line for line in buff_lines[:-1]]
 
 
     def _set_file_position(self, offset, start=FILE_BEGIN):

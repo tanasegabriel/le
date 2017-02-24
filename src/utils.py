@@ -3,9 +3,13 @@
 # vim: set ts=4 sw=4 et:
 
 #pylint: disable=invalid-name
+#pylint: disable=wrong-import-order, wrong-import-position
+
+from future.standard_library import install_aliases
+install_aliases()
+from urllib.parse import urlencode #pylint: disable=import-error
 
 import errno
-import httplib
 import os
 import re
 import socket
@@ -13,11 +17,13 @@ import sys
 import logging
 import json
 import getpass
-import urllib
+import http.client
 
-from domain import Domain
-from __init__ import __version__
-from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+
+from .domain import Domain
+from .__init__ import __version__
+from .constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+from .backports import match_hostname, CertificateError
 
 try:
     import uuid
@@ -25,7 +31,6 @@ try:
 except ImportError:
     FEAT_UUID = False
 
-from backports import match_hostname, CertificateError
 
 
 __author__ = 'Logentries'
@@ -74,7 +79,7 @@ def report(what):
     """Write text to stderr"""
     sys.stderr.write(what)
 
-class ServerHTTPSConnection(httplib.HTTPSConnection):
+class ServerHTTPSConnection(http.client.HTTPSConnection):
     """
     A slight modification of HTTPSConnection to verify the certificate
     """
@@ -94,22 +99,22 @@ class ServerHTTPSConnection(httplib.HTTPSConnection):
     def config_connection(self, config, server, port, context, cert_file):
         """Create https connection with config provided"""
         if config.use_proxy:
-            httplib.HTTPSConnection.__init__(self,
-                                             config.proxy_url,
-                                             config.proxy_port,
-                                             context=context)
-            httplib.HTTPSConnection.set_tunnel(self, server, port)
+            http.client.HTTPSConnection.__init__(self,
+                                                 config.proxy_url,
+                                                 config.proxy_port,
+                                                 context=context)
+            http.client.HTTPSConnection.set_tunnel(self, server, port)
         else:
-            httplib.HTTPSConnection.__init__(self, server, port, cert_file=cert_file)
+            http.client.HTTPSConnection.__init__(self, server, port, cert_file=cert_file)
 
 
     def connect(self):
         """Create http(s) connection"""
         if FEAT_SSL_CONTEXT:
-            httplib.HTTPSConnection.connect(self)
+            http.client.HTTPSConnection.connect(self)
         else:
             if self.no_ssl:
-                return httplib.HTTPSConnection.connect(self)
+                return http.client.HTTPSConnection.connect(self)
             sock = create_connection(self.host, self.port)
             try:
                 if self._tunnel_host:
@@ -286,11 +291,11 @@ def domain_connect(config, domain, _domain):
         return make_https_connection(config, server, port)
     else:
         if config.use_proxy:
-            conn = httplib.HTTPConnection(config.proxy_url, config.proxy_port)
+            conn = http.client.HTTPConnection(config.proxy_url, config.proxy_port)
             conn.set_tunnel(server, port)
             return conn
         else:
-            return httplib.HTTPConnection(server, port)
+            return http.client.HTTPConnection(server, port)
 
 
 def no_more_args(args):
@@ -516,7 +521,7 @@ def retrieve_account_key(config):
             password = getpass.getpass()
             c = domain_connect(config, Domain.MAIN, Domain)
             c.request('POST', ACCOUNT_KEYS_API,
-                      urllib.urlencode({'username': username, 'password': password}),
+                      urlencode({'username': username, 'password': password}),
                       {
                           'Referer': 'https://logentries.com/login/',
                           'Content-type': 'application/x-www-form-urlencoded',

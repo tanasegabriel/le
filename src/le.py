@@ -4,11 +4,14 @@
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
 
+#pylint: disable=wrong-import-order, wrong-import-position
+from future.standard_library import install_aliases
+from urllib.parse import urlencode, quote #pylint: disable=import-error
+install_aliases()
+
 import json
-import Queue
 import atexit
 import glob
-import httplib
 import logging
 import logging.handlers
 import os
@@ -24,26 +27,26 @@ import sys
 import threading
 import time
 import traceback
-import urllib
 import requests
-
+from queue import Queue
+import http.client
 # Do not remove - fix for Python #8484
 try:
     import hashlib #pylint: disable=unused-import
 except ImportError:
     pass
 
-import formats
-import socks
-import utils
-import metrics
-from config import Config, FatalConfigurationError
-from followers import Follower, MultilogFollower
-from log import log as log_object
-from domain import Domain
-from backports import CertificateError, match_hostname
-from datetime_utils import parse_timestamp_range
-from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+from . import formats
+from . import socks
+from . import utils
+from . import metrics
+from .config import Config, FatalConfigurationError
+from .followers import Follower, MultilogFollower
+from .log import log as log_object
+from .domain import Domain
+from .backports import CertificateError, match_hostname
+from .datetime_utils import parse_timestamp_range
+from .constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
@@ -78,7 +81,7 @@ except ImportError:
     FEAT_SSL = False
 
     try:
-        _ = httplib.HTTPSConnection
+        _ = http.client.HTTPSConnection
     except AttributeError:
         utils.die('NOTE: Please install Python "ssl" module.')
 
@@ -251,14 +254,15 @@ def collect_log_names(system_info):
 
     LOG.debug("Collected logs: %s", logs)
     try:
-        conn = httplib.HTTPSConnection(LE_SERVER_API)
+
+        conn = http.client.HTTPSConnection(LE_SERVER_API)
         request_ = {
             'logs': json.dumps(logs),
             'distname': system_info['distname'],
             'distver': system_info['distver']
         }
         LOG.debug("Requesting %s", request_)
-        conn.request('post', ID_LOGS_API, urllib.urlencode(request_), {})
+        conn.request('post', ID_LOGS_API, urlencode(request_), {})
         response = conn.getresponse()
         if not response or response.status != 200:
             utils.die('Error: Unexpected response from logentries (%s).' %
@@ -382,7 +386,7 @@ class Transport(object):
         self.port = port
         self.use_ssl = use_ssl
         self.preamble = preamble
-        self._entries = Queue.Queue(SEND_QUEUE_SIZE)
+        self._entries = Queue(SEND_QUEUE_SIZE)
         self._socket = None # Socket with optional TLS encyption
         self._debug_transport_events = debug_transport_events
 
@@ -518,7 +522,10 @@ class Transport(object):
                 # If the socket is open, send preamble and leave
                 if self._socket:
                     if self.preamble:
-                        self._socket.send(self.preamble)
+                        try:
+                            self._socket.send(self.preamble)
+                        except TypeError:
+                            self._socket.send(str.encode(self.preamble))
                     break
             except socket.error:
                 if self._shutdown:
@@ -563,10 +570,10 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.Full:
+            except Queue.Full: #pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
-                except Queue.Empty:
+                except Queue.Empty: #pylint: disable=no-member
                     pass
 
     def close(self):
@@ -583,7 +590,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.Empty:
+                except Queue.Empty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -673,7 +680,7 @@ def get_response(operation, addr, data=None, headers=None,
     except socket.error as msg:  # Network error
         if not silent:
             LOG.debug("Network error: %s", msg)
-    except httplib.BadStatusLine:
+    except http.client.BadStatusLine:
         error = "Internal error, bad status line"
         if die_on_error:
             utils.die(error)
@@ -690,7 +697,7 @@ def pull_request(what, params):
 
     # Obtain response
     addr = '/%s/%s/?%s' % (
-        CONFIG.user_key, urllib.quote(what), urllib.urlencode(params))
+        CONFIG.user_key, quote(what), urlencode(params))
     response, conn = get_response("GET", addr, domain=Domain.PULL)
 
     # Check the response
@@ -717,7 +724,7 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
     while True:
         # Obtain response
         response, conn = get_response(
-            rtype, urllib.quote('/' + CONFIG.user_key + '/' + request_),
+            rtype, quote('/' + CONFIG.user_key + '/' + request_),
             die_on_error=not retry)
 
         # Check the response
@@ -772,12 +779,15 @@ def _get_log(log_id=None):
     """
     url = LOG_URL + log_id if log_id else LOG_URL
     headers = generate_headers()
-    response = _try_get_request(url, headers)
-    if response.status_code is 200:
-        return response.json()
-    else:
-        LOG.error("Could not retrieve log - %d", response.status_code)
-        return None
+    try:
+        response = _try_get_request(url, headers)
+        if response.status_code is 200:
+            return response.json()
+        else:
+            LOG.error("Could not retrieve log - %d", response.status_code)
+            return None
+    except requests.exceptions.RequestException as error:
+        utils.die(error)
 
 
 def _get_log_by_name(log_name):
@@ -869,13 +879,17 @@ def get_logset(logset_id=None):
     """
     url = LOGSET_URL + logset_id if logset_id else LOGSET_URL
     headers = generate_headers()
-    response = _try_get_request(url, headers)
-    if response.status_code is 200:
-        return response.json()
-    else:
-        LOG.error("ERROR: %d - Could not retrieve logset %s for account ID %s.",
-                  response.status_code, logset_id, CONFIG.user_key)
-        return None
+
+    try:
+        response = _try_get_request(url, headers)
+        if response.status_code is 200:
+            return response.json()
+        else:
+            LOG.error("ERROR: %d - Could not retrieve logset %s for account ID %s.",
+                      response.status_code, logset_id, CONFIG.user_key)
+            return None
+    except requests.exceptions.RequestException as error:
+        utils.die(error)
 
 
 def get_logset_by_name(logset_name):
@@ -966,7 +980,6 @@ def cmd_reinit(args):
     LOG.info("Reinitialized")
 
 
-#TODO LOG 8778 Rename command?
 def cmd_register(args):
     """
     Registers the agent in logentries infrastructure. The newly obtained
@@ -977,7 +990,7 @@ def cmd_register(args):
 
     if CONFIG.agent_key != NOT_SET and not CONFIG.force:
         utils.report("Warning: Server already registered. "
-                     "Use --force to override current registration.")
+                     "Use --force to override current registration.\n")
         return
     CONFIG.user_key_required(True)
     CONFIG.hostname_required()
@@ -1629,17 +1642,6 @@ def _list_object(request_, hostnames=False):
         print('distribution =', request_['distname'])
         print('distver =', request_['distver'])
         return
-    elif obj == 'log': #TODO update this
-        print('name =', request_['name'])
-        print('filename =', request_['filename'])
-        print('key =', request_['key'])
-        print('type =', request_['type'])
-        print('follow =', request_['follow'])
-        if 'token' in request_:
-            print('token =', request_['token'])
-        if 'logtype' in request_:
-            print('logtype =', _logtype_name(request_['logtype']))
-        return
     elif obj == 'list':
         print('name =', request_['name'])
         return
@@ -1730,10 +1732,14 @@ def cmd_rm(args):
     addr = args[0]
 
     headers = generate_headers()
-    response = requests.delete(addr, headers=headers)
-
-    if response.status_code is not 204:
-        utils.report(response.text)
+    try:
+        response = requests.delete(addr, headers=headers)
+        if response.status_code is 204:
+            LOG.info("Successfully deleted \n")
+        else:
+            LOG.error('Deleting resource failed, status code: %d', response.status_code,)
+    except requests.exceptions.RequestException as error:
+        utils.die(error)
 
 
 def cmd_pull(args):

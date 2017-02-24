@@ -4,16 +4,18 @@
 # vim: set ts=4 sw=4 et:
 
 #pylint: disable=redefined-outer-name, invalid-name
-import ConfigParser
+#pylint: disable=wrong-import-order, wrong-import-position
+
+import configparser as ConfigParser
 import re
 import sys
 import threading
 import time
 import traceback
 
-import formats
-from utils import report
-from __init__ import __version__
+from . import formats
+from .utils import report
+from .__init__ import __version__
 
 # Try to import psutils
 try:
@@ -23,7 +25,7 @@ except ImportError:
     PSUTIL_AVAILABLE = False
 
 
-# Main section name (TODO - move it)
+# Main section name
 SECT = 'Main'
 # Common option prefix
 PREFIX = 'metrics-'
