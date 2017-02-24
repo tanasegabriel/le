@@ -6,8 +6,8 @@
 
 #pylint: disable=wrong-import-order, wrong-import-position
 from future.standard_library import install_aliases
-from urllib.parse import urlencode, quote #pylint: disable=import-error
 install_aliases()
+from urllib.parse import urlencode, quote #pylint: disable=import-error
 
 import json
 import atexit
@@ -40,6 +40,7 @@ from . import formats
 from . import socks
 from . import utils
 from . import metrics
+from .utils import safe_get
 from .config import Config, FatalConfigurationError
 from .followers import Follower, MultilogFollower
 from .log import log as log_object
@@ -965,8 +966,20 @@ def cmd_whoami(args):
     CONFIG.agent_key_required()
     utils.no_more_args(args)
     logset = get_logset(CONFIG.agent_key)
+    logs = _get_loglist_with_paths()
     if logset is not None:
-        print(json.dumps(logset, indent=4, sort_keys=True))
+        LOG.info("name %s", utils.safe_get(logset, 'logset', 'name'))
+        LOG.info("hostname %s", CONFIG.hostname)
+        LOG.info("key %s", utils.safe_get(logset, 'logset', 'id'))
+        LOG.info("distribution %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distname'))
+        LOG.info("distver %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distver'))
+        if logs is not None:
+            LOG.info("logs:")
+            for logname, filepath in logs.items():
+                LOG.info("\tname %s", logname)
+                LOG.info("\tpath %s", filepath)
+        else:
+            LOG.info("no logs")
 
 
 def cmd_reinit(args):
