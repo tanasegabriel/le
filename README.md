@@ -125,6 +125,7 @@ find in `.git/config` or Windows INI files. For example:
 	[Main]
 	user-key = e720a1e8-a7d5-4f8b-8879-854e51c9290d
 	agent-key = 428b888a-29ab-4079-99ec-9cb7aa2ffea7
+	api-key = e11b8967-ac81-4051-9c1c-2e40655dd508
 
 	[cassandra]
 	metrics-process = org.apache.cassandra.service.CassandraDaemon
@@ -136,6 +137,8 @@ section defines per-application settings such as log filenames and metrics.
 
 In the main section, `user-key` (account key) which identifies account, and
 `agent-key` which identifies host (host key).
+
+A read/write API key is required. This is the api-key field in the Main section of the config.
 
 Note the `monitor` command requires both `user-key` and `agent-key` defined.
 

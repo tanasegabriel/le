@@ -28,6 +28,7 @@ import threading
 import time
 import traceback
 import requests
+import queue
 from queue import Queue
 import http.client
 # Do not remove - fix for Python #8484
@@ -40,7 +41,6 @@ from . import formats
 from . import socks
 from . import utils
 from . import metrics
-from .utils import safe_get
 from .config import Config, FatalConfigurationError
 from .followers import Follower, MultilogFollower
 from .log import log as log_object
@@ -574,7 +574,7 @@ class Transport(object):
             except Queue.Full: #pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
-                except Queue.Empty: #pylint: disable=no-member
+                except queue.Empty:
                     pass
 
     def close(self):
@@ -591,7 +591,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.Empty: #pylint: disable=no-member
+                except queue.Empty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -832,17 +832,27 @@ def create_log(logset_id, name, filename, do_follow=True, source=None):
         utils.die(error)
 
 
-def create_logset(name, filename=None, follow=False):
+def create_logset(name, filename="", follow=""):
     """
     Creates a new host on server with given parameters.
     """
     headers = generate_headers()
-    user_data = {}
-    if filename is not None and follow is True:
-        user_data = {
-            'le_agent_filename': filename,
-            'le_agent_follow': follow
-        }
+    platform_info = platform.dist()
+
+    distribution = ""
+    if platform_info[0]:
+        distribution = platform_info[0]
+
+    version = ""
+    if platform_info[1]:
+        version = platform_info[1]
+
+    user_data = {
+        'le_agent_filename': filename,
+        'le_agent_follow': follow,
+        'le_agent_distribution': distribution,
+        'le_agent_distver': version
+    }
 
     request_params = {
         'logset': {
@@ -856,7 +866,7 @@ def create_logset(name, filename=None, follow=False):
         if response.status_code is 201:
             return response.json()
         else:
-            LOG.error("Error - %d. Could not create logset.", response.status_code)
+            utils.die("Error - %d. Could not create logset." % response.status_code)
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
@@ -1195,7 +1205,7 @@ def _get_all_logs_for_host():
 
         for log_id in log_ids:
             log_ = _get_log(log_id)
-            if 'user_data' in log_['log']:
+            if log_ is not None and 'user_data' in log_['log']:
                 user_data = log_['log']['user_data']
                 if 'le_agent_follow' in user_data and user_data['le_agent_follow'] == "true":
                     logs.append(log_)
@@ -1300,10 +1310,21 @@ def _is_followed(filename):
     """Checks if the file given is followed.
     """
     logs = _get_log()
-    if logs is not None:
-        keyname = 'log' if 'log' in logs else 'logs'
-        if keyname in logs:
-            for ilog in logs[keyname]:
+    host_logs = []
+
+    if logs is None:
+        return False
+    keyname = 'log' if 'log' in logs else 'logs'
+    if keyname in logs:
+        for ilog in logs[keyname]:
+            if 'logsets_info' in ilog:
+                for logset_info in ilog['logsets_info']:
+                    if logset_info['id'] == CONFIG.agent_key:
+                        host_logs.append(ilog)
+
+
+    if host_logs is not None:
+            for ilog in host_logs:
                 if 'user_data' in ilog:
                     user_data = ilog['user_data']
                     if ('le_agent_follow' in user_data and
@@ -1750,7 +1771,7 @@ def cmd_rm(args):
         if response.status_code is 204:
             LOG.info("Successfully deleted \n")
         else:
-            LOG.error('Deleting resource failed, status code: %d', response.status_code,)
+            LOG.error('Deleting resource failed, status code: %d', response.status_code)
     except requests.exceptions.RequestException as error:
         utils.die(error)
 

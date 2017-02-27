@@ -427,7 +427,12 @@ class Config(object):
 
             self.metrics.save(conf)
 
-            conf.write(conf_file)
+            try:
+                conf.write(str.encode(conf_file))
+            except TypeError:
+                conf.write(conf_file)
+
+
         except IOError as error:
             utils.die("Error: IO error when writing to config file: %s" % error)
 
