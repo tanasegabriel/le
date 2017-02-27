@@ -1324,13 +1324,13 @@ def _is_followed(filename):
 
 
     if host_logs is not None:
-            for ilog in host_logs:
-                if 'user_data' in ilog:
-                    user_data = ilog['user_data']
-                    if ('le_agent_follow' in user_data and
-                            (user_data['le_agent_follow'] == "true" and
-                             user_data['le_agent_filename'] == filename)):
-                        return True
+        for ilog in host_logs:
+            if 'user_data' in ilog:
+                user_data = ilog['user_data']
+                if ('le_agent_follow' in user_data and
+                        (user_data['le_agent_follow'] == "true" and
+                         user_data['le_agent_filename'] == filename)):
+                    return True
     return False
 
 
