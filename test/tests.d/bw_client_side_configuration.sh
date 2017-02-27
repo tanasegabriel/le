@@ -23,11 +23,11 @@ cat "$CONFIG"
 #o agent-key = 41ae887a-284a-4d78-91fe-56485b076148
 #o hostname = myhost
 #o metrics-mem = system
-#o metrics-token = 
+#o metrics-token =
 #o metrics-disk = sum
 #o metrics-swap = system
 #o metrics-space = /
-#o metrics-vcpu = 
+#o metrics-vcpu =
 #o metrics-net = sum
 #o metrics-interval = 5s
 #o metrics-cpu = system

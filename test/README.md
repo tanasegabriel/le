@@ -11,7 +11,7 @@ Tests requires some Python packages which are not included in standard installat
 
 	virtualenv env
 	source env/bin/activate
-	pip install -e requirements.pip
+	pip install -r requirements.pip
 
 Now you should be good to run all tests.
 
