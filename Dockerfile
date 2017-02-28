@@ -10,7 +10,7 @@ RUN apt-get install -y libbz2-dev libc6-dev libdb-dev libexpat1-dev \
     python-opengl python-imaging python-pyrex python-pyside.qtopengl \
     idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml \
     libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 \
-    python-qt4-gl libgle3 python-dev libssl-dev --no-install-recommends
+    python-qt4-gl libgle3 python-dev libssl-dev curl --no-install-recommends
 
 #INSTALL PYTHON 3
 
@@ -18,6 +18,8 @@ RUN echo 'Installing python'
 
 RUN apt-get install -y python3 python3-dev
 RUN apt-get install -y pylint
+
+RUN pip install future
 
 #COPY PROJECT FILES
 

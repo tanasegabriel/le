@@ -1,4 +1,7 @@
 """Logging Module"""
+#!/usr/bin/env python
+# coding: utf-8
+# vim: set ts=4 sw=4 et:
 import sys
 import logging
 

@@ -1,4 +1,8 @@
 """Follower Module"""
+#!/usr/bin/env python
+# coding: utf-8
+# vim: set ts=4 sw=4 et:
+
 #pylint: disable=too-many-instance-attributes
 import sys
 import os

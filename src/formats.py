@@ -1,7 +1,7 @@
 """Formats Module"""
+#!/usr/bin/env python
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
-
 import datetime
 import socket
 import string
