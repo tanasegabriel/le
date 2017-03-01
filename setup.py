@@ -9,7 +9,7 @@ setup(name='logentries',
       url='https://www.logentries.com/',
       package_dir={'logentries': 'src'},
       packages=['logentries'],
-      install_requires=['futures==3.0.5'],
+      install_requires=['future==0.16.0', 'configparser==3.5.0'],
       entry_points={
           'console_scripts': [
               'le = logentries.le:main'

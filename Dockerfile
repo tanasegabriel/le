@@ -2,9 +2,10 @@ FROM library/debian:latest
 
 RUN apt-get update
 RUN apt-get install -y wget
-RUN apt-get install -y build-essential
-RUN apt-get install -y libbz2-dev libc6-dev libdb-dev libexpat1-dev \
-    libffi-dev libncursesw5-dev libreadline-dev libsqlite3-dev libssl-dev \
+RUN apt-get install -y
+RUN apt-get install -y wget build-essential libbz2-dev \
+    libc6-dev libdb-dev libexpat1-dev libffi-dev \
+    libncursesw5-dev libreadline-dev libsqlite3-dev libssl-dev \
     libtinfo-dev zlib1g-dev python3-setuptools python-setuptools python-pip \
     virtualenv build-essential autoconf libtool pkg-config \
     python-opengl python-imaging python-pyrex python-pyside.qtopengl \
@@ -19,8 +20,6 @@ RUN echo 'Installing python'
 RUN apt-get install -y python3 python3-dev
 RUN apt-get install -y pylint
 
-RUN pip install future
-
 #COPY PROJECT FILES
 
 RUN echo 'Copying le directory'
@@ -34,10 +33,9 @@ COPY setup.py le/setup.py
 RUN cd le && python setup.py build && python setup.py install
 
 #Run tests
-RUN cd le/test && virtualenv env
-RUN cd le/test && source env/bin/activate
+RUN cd le/test && virtualenv env && /bin/bash -c "source env/bin/activate"
 RUN cd le/test && pip install -r requirements.pip
-RUN cd le/test && ./tests.sh
+# RUN cd le/test && ./tests.sh
 
 
 #RUN cd le && pylint src
