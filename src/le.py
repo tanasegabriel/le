@@ -571,7 +571,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.Full: #pylint: disable=no-member
+            except Queue.QueueFull: #pylint: disable=no-member
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
@@ -584,7 +584,7 @@ class Transport(object):
         self._worker.join(TRANSPORT_JOIN_INTERVAL)
 
     def run(self):
-        """When run with backgroud thread it collects entries from internal
+        """When run with background thread it collects entries from internal
         queue and sends them to destination."""
         self._open_connection()
         while not self._shutdown:
