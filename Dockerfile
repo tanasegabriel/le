@@ -21,8 +21,9 @@ COPY test/ le/test/
 COPY setup.py le/setup.py
 COPY .pylintrc le/pylintrc
 
-RUN cd le && python setup.py build && python setup.py install
+RUN pip install pylint
 
+RUN cd le && python setup.py build && python setup.py install
 
 
 #RUN cd le && pylint src
