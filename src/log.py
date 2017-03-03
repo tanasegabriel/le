@@ -5,7 +5,7 @@
 import sys
 import logging
 
-from .utils import report, LOG_LE_AGENT, EXIT_ERR
+from utils import report, LOG_LE_AGENT, EXIT_ERR
 
 class Log(object):
     """Log object"""

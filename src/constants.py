@@ -3,7 +3,7 @@
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
 
-from .__init__ import __version__
+from __init__ import __version__
 
 NOT_SET = None
 

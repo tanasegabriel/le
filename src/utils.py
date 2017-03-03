@@ -21,10 +21,10 @@ import getpass
 import http.client
 
 
-from .domain import Domain
-from .__init__ import __version__
-from .constants import * #pylint: disable=unused-wildcard-import,wildcard-import
-from .backports import match_hostname, CertificateError
+from domain import Domain
+from __init__ import __version__
+from constants import * #pylint: disable=unused-wildcard-import,wildcard-import
+from backports import match_hostname, CertificateError
 
 try:
     import uuid

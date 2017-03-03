@@ -1,5 +1,3 @@
-"""Logentries Agent <https://logentries.com/>."""
-
 #!/usr/bin/env python
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
@@ -37,17 +35,17 @@ try:
 except ImportError:
     pass
 
-from . import formats
-from . import socks
-from . import utils
-from . import metrics
-from .config import Config, FatalConfigurationError
-from .followers import Follower, MultilogFollower
-from .log import log as log_object
-from .domain import Domain
-from .backports import CertificateError, match_hostname
-from .datetime_utils import parse_timestamp_range
-from .constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+import formats
+import socks
+import utils
+import metrics
+from config import Config, FatalConfigurationError
+from followers import Follower, MultilogFollower
+from log import log as log_object
+from domain import Domain
+from backports import CertificateError, match_hostname
+from datetime_utils import parse_timestamp_range
+from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
@@ -591,7 +589,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except queue.Empty: #pylint: disable=no-member
+                except Queue.QueueEmpty: #pylint: disable=no-member
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -1169,10 +1167,7 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    if 'log' in log_ and log_['log']['source_type'] is 'token':
-        return log_['log']['token_seed']
-    else:
-        return None
+    return utils.safe_get(log_, 'log', 'token_seed')
 
 
 def construct_configured_log(configured_log):
@@ -1228,11 +1223,14 @@ def start_followers(default_transport, states):
     available_formatters = config_formatters()
 
     for log_ in logs:
+        transport = default_transport.get()
+
         multilog_filename = False
         log_filename = log_['log']['user_data']['le_agent_filename']
         log_name = log_['log']['name']
         log_id = log_['log']['id']
         log_token = extract_token(log_)
+        #TODO check for no log token
 
         if log_filename.startswith(PREFIX_MULTILOG_FILENAME):
             log_filename = log_filename.replace(PREFIX_MULTILOG_FILENAME, '', 1).lstrip()
@@ -1259,9 +1257,9 @@ def start_followers(default_transport, states):
         LOG.info("Following %s", log_filename)
 
 
-        if log_token or CONFIG.datahub:
+        if log_token is not None or CONFIG.datahub is not None:
             transport = default_transport.get()
-        elif log_id:
+        elif log_id is not None:
             endpoint = Domain.DATA
 
             use_ssl = not CONFIG.suppress_ssl

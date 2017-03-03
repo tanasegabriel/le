@@ -25,5 +25,8 @@ RUN pip install pylint
 
 RUN cd le && python setup.py build && python setup.py install
 
+RUN touch ~/.bash_profile
+RUN echo "alias test='cd le/test && virtualenv env && source env/bin/activate && pip install -r requirements.pip && ./tests.sh'" > ~/.bash_profile && /bin/bash -c "source ~/.bash_profile"
+
 
 #RUN cd le && pylint src

@@ -13,9 +13,9 @@ import threading
 import time
 import traceback
 
-from . import formats
-from .utils import report
-from .__init__ import __version__
+import formats
+from utils import report
+from __init__ import __version__
 
 # Try to import psutils
 try:

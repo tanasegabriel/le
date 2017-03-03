@@ -88,3 +88,7 @@ Once the container is built, you can run it with the following command:
 Then you can run the tests with:
 
     cd le/test && virtualenv env && source env/bin/activate && pip install -r requirements.pip && ./tests.sh
+    
+Pylint can also be run on the docker container with:
+
+    cd le && pylint src
