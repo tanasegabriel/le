@@ -67,3 +67,24 @@ API and data server mocks
 
 Mock of API and data servers are located in `mocks` directory. They are executed automatically from `vars`.
 
+
+Running tests with docker
+--------------------------
+
+If you are not using Debian, you should use the provided Docker container to run the tests.
+
+The docker container is configured with everything you need to run the tests. You can build the container
+from the project root directory with the following command:
+
+    docker build -t le_agent .
+    
+This will build a docker image called le_agent. The first time you run this command, 
+it may take 10-15 minutes to build the container. Subsequent runs should be significantly faster.
+    
+Once the container is built, you can run it with the following command:
+
+    docker run -it le_agent
+    
+Then you can run the tests with:
+
+    cd le/test && virtualenv env && source env/bin/activate && pip install -r requirements.pip && ./tests.sh
