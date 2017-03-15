@@ -29,11 +29,8 @@ import threading
 import time
 import traceback
 import requests
-try:
-    import Queue as queue
-except ImportError:
-    import queue
-    from queue import Queue
+import queue
+from queue import Queue
 import http.client
 # Do not remove - fix for Python #8484
 try:
@@ -574,7 +571,7 @@ class Transport(object):
             try:
                 self._entries.put_nowait(entry)
                 break
-            except Queue.QueueFull: #pylint: disable=no-member
+            except queue.Full:
                 try:
                     self._entries.get_nowait()
                 except queue.Empty:
