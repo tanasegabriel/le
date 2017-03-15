@@ -34,15 +34,32 @@ except ImportError:
     FEAT_UUID = False
 
 
+try:
+    import termcolor
+    colored = termcolor.colored
+except ImportError:
+    def colored(text, color):
+        return text
+
+def red(text):
+    return colored('%s'%text, 'red')
+
+def c_param(text):
+    return colored('%s'%text, 'green')
+
+def c_id(text):
+    return colored('%s'%text, 'cyan')
+
 
 __author__ = 'Logentries'
 
 __all__ = ["EXIT_OK", "EXIT_NO", "EXIT_HELP", "EXIT_ERR", "EXIT_TERMINATED",
            "ServerHTTPSConnection", "LOG_LE_AGENT", "create_conf_dir",
            "default_cert_file", "system_cert_file", "domain_connect",
-           "no_more_args", "find_hosts", "find_logs", "find_api_obj_by_key",
-           "find_api_obj_by_name", "die", "rfile", 'TCP_TIMEOUT', "rm_pidfile",
-           "uuid_parse", "report"]
+           "no_more_args", "find_hosts", "find_logs", "find_api_obj_by_key", "find_api_obj_by_name", "die",
+           "error", "cmp_patterns",
+           "rfile", 'TCP_TIMEOUT', "rm_pidfile", "uuid_parse", "report",
+           "colored", "c_param", "c_id"]
 
 
 AUTHORITY_CERTIFICATE_FILES = [
@@ -400,9 +417,12 @@ def find_api_obj_by_key(obj_list, key):
 
 
 def die(cause, exit_code=EXIT_ERR):
-    """Log error as critical and exit with code"""
-    log.critical(cause)
+    log.critical('%s', cause)
     sys.exit(exit_code)
+
+
+def error(cause, *args):
+    die(red('Error:' + ' ' + cause % args))
 
 
 def rfile(name):
@@ -562,3 +582,26 @@ def safe_get(dct, *keys):
         except KeyError:
             return None
     return dct
+
+
+def cmp(a, b):
+    """
+    Built-in cmp method is removed in python3
+    """
+    return (a > b) - (a < b)
+
+
+def cmp_patterns(a, b):
+    """
+    Intuitive comparison of two patterns.
+    """
+    v = cmp(a['priority'], b['priority'])
+    if v == 0:
+        ap = a['pattern'].lower()
+        if ap.endswith('/'):
+            ap = ap[:-1]
+        bp = b['pattern'].lower()
+        if bp.endswith('/'):
+            bp = bp[:-1]
+        v = cmp(ap, bp)
+    return v

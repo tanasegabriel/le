@@ -691,6 +691,56 @@ def get_response(operation, addr, data=None, headers=None,
     return None, None
 
 
+def api_v2_request(method, url, request, required=False, silent=False, die_on_error=True):
+    """
+    Processes a request on the logentries domain.
+    """
+    # Obtain response
+    request_encoded = json.dumps(request)
+    response, conn = get_response(
+        method, '/v2/accounts/%s/%s'%(config.user_key, url), request_encoded,
+        silent=silent, die_on_error=die_on_error, domain=Domain.API,
+        headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+    # Check the response
+    if not response:
+        if required:
+            utils.error("Cannot process LE request, no response")
+        if conn:
+            conn.close()
+        return None
+
+    xresponse = response.read()
+    conn.close()
+
+    LOG.debug('Domain response: "%s"', xresponse)
+    try:
+        if xresponse:
+            d_response = utils.json_loads(xresponse)
+        else:
+            d_response = {}
+    except ValueError:
+        error = 'Error: Invalid response, parse error.'
+        if die_on_error:
+            utils.die(error)
+        else:
+            LOG.info(error)
+            d_response = None
+
+    if response.status not in [http.client.OK, http.client.CREATED, http.client.NO_CONTENT]:
+        reason = ''
+        if 'reason' in d_response:
+            reason = d_response['reason']
+        if required:
+            if reason:
+                error("%s" % reason)
+            else:
+                error("Cannot process LE request: (%s)", response.status)
+        return None
+
+    return d_response
+
+
 def pull_request(what, params):
     """
     Processes a pull request on the logentries domain.
@@ -703,11 +753,11 @@ def pull_request(what, params):
 
     # Check the response
     if not response:
-        utils.die("Error: Cannot process LE request, no response")
+        utils.error("Cannot process LE request, no response")
     if response.status == 404:
-        utils.die("Error: Log not found")
+        utils.error("Log not found")
     if response.status != 200:
-        utils.die("Error: Cannot process LE request: (%s)" % response.status)
+        utils.error("Cannot process LE request: (%s)" % response.status)
 
     while True:
         data = response.read(65536)
@@ -748,10 +798,10 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
     try:
         d_response = json.loads(response)
     except ValueError:
-        utils.die('Error: Invalid response (%s)' % response)
+        utils.error('Invalid response (%s)' % response)
 
     if check_status and d_response['response'] != 'ok':
-        utils.die('Error: %s' % d_response['reason'])
+        utils.error('%s' % d_response['reason'])
 
     return d_response
 
@@ -1517,9 +1567,9 @@ def cmd_follow(args):
     Follow the log file given.
     """
     if len(args) == 0:
-        utils.die("Error: Specify the file name of the log to follow.")
+        utils.error("Specify the file name of the log to follow.")
     if len(args) > 1:
-        utils.die("Error: Too many arguments.\n"
+        utils.error("Too many arguments.\n"
                   "A common mistake is to use wildcards in path that is being "
                   "expanded by shell. Enclose the path in single quotes to avoid "
                   "expansion.")
@@ -1551,9 +1601,9 @@ def cmd_follow_multilog(args):
     the '--multilog' parameter included - modification of cmd_follow
     """
     if len(args) == 0:
-        utils.die("Error: Specify the file name of the log to follow.")
+        utils.error("Specify the file name of the log to follow.")
     if len(args) > 1:
-        utils.die("Error: Too many arguments.\n"
+        utils.error("Too many arguments.\n"
                   "A common mistake is to use wildcards in path that is being "
                   "expanded by shell. Enclose the path in single quotes to avoid "
                   "expansion.")
@@ -1618,9 +1668,9 @@ def cmd_followed(args):
     Check if the log file given is followed.
     """
     if len(args) == 0:
-        utils.die("Error: Specify the file name of the log to test.")
+        utils.error("Specify the file name of the log to test.")
     if len(args) != 1:
-        utils.die("Error: Too many arguments. Only one file name allowed.")
+        utils.error("Too many arguments. Only one file name allowed.")
     CONFIG.load()
     CONFIG.agent_key_required()
 
@@ -1741,12 +1791,80 @@ def cmd_ls_ips():
     print(' '.join(ips))
 
 
+def cmd_ls_structures():
+    """
+    List user defined structures.
+    """
+    CONFIG.load()
+    CONFIG.user_key_required(True)
+
+    response = api_v2_request('GET', 'structures', {}, True)
+    structures = response['structures']
+
+    for structure in sorted(structures, key=lambda x: x['name']):
+        if CONFIG.uuid:
+            print(utils.c_id(structure['id']))
+        print(structure['name'])
+
+    if len(structures) == 0:
+        print('No structures defined', file=sys.stderr)
+    elif len(structures) == 1:
+        print('1 structure', file=sys.stderr)
+    else:
+        print('%s structures' % len(structures), file=sys.stderr)
+
+
+def cmd_ls_patterns(structure_name):
+    """
+    Lists patterns associated with the structure given.
+    """
+    if not structure_name:
+        utils.error('Structure name not specified')
+
+    CONFIG.load()
+    CONFIG.user_key_required(True)
+
+    response = api_v2_request('GET', 'structures', {}, True)
+    structures = response['structures']
+
+    # Find structure
+    matches = [s['id'] for s in structures if structure_name.lower() == s['id'].lower() or structure_name == s['name']]
+    if len(matches) == 0:
+        utils.error('Structure `%s\' does not exist', structure_name)
+    if len(matches) > 1:
+        utils.error('Multiple matches for `%s\'', structure_name)
+    structure_id = matches[0]
+
+    response = api_v2_request('GET', 'structures/%s/patterns'%structure_id, {}, True)
+
+    patterns = response['patterns']
+    for pattern in sorted(patterns, cmp=utils.cmp_patterns):
+        if CONFIG.uuid:
+            print (utils.c_id(pattern['id'])),
+        print ('%2d %s' % (pattern['priority'], pattern['pattern']))
+    if len(patterns) == 0:
+        print('No patterns in structure `%s\'' % structure_name, file=sys.stderr)
+    elif len(patterns) == 1:
+        print('1 pattern', file=sys.stderr)
+    else:
+        print('%s patterns' % len(patterns), file=sys.stderr)
+
+
 def cmd_ls(args):
     """
     General list command
     """
     if len(args) == 1 and args[0] == 'ips':
         cmd_ls_ips()
+        return
+    if len(args) == 1 and args[0] == 'structures':
+        cmd_ls_structures()
+        return
+    if len(args) >= 1 and args[0].startswith('structures/'):
+        if len(args) == 1:
+            cmd_ls_patterns(args[0][len('structures/'):])
+        else:
+            utils.die('Error: Too many arguments.')
         return
     if len(args) == 0:
         args = ['/']
@@ -1764,11 +1882,178 @@ def cmd_ls(args):
                  hostnames=addr.startswith('hostnames'))
 
 
+def cmd_add_structure(args):
+    """
+    Add a new structure command.
+    Args:
+        args: structure name followed by (optionally) pattern and priority
+    """
+    if not args:
+        utils.error('No structure name specified')
+    structure_name = args[0].strip()
+    if not structure_name:
+        utils.error('Empty structure name')
+
+    pattern = ''
+    priority = -1
+
+    # Get and check the pattern
+    if len(args) > 1:
+        pattern = args[1]
+        if not pattern:
+            utils.error('Pattern in empty')
+
+    if len(args) > 2:
+        try:
+            priority = int(args[2])
+            if priority < 0:
+                utils.error('Priority must be positive')
+            if priority > MAX_PATTERN_PRIORITY:
+                utils.error('Priority `%s\'is above the limit (%s)', args[2], MAX_PATTERN_PRIORITY)
+        except ValueError:
+            utils.error('Invalid priority `%s\', must be a positive integer', args[2])
+
+    if len(args) > 3:
+        utils.error('Too many arguments')
+
+    CONFIG.load()
+    CONFIG.user_key_required(True)
+
+    # Get all structures
+    response = api_v2_request('GET', 'structures', {}, True)
+    structures = response['structures']
+
+    # Find the structure
+    matches = [s['id'] for s in structures if structure_name.lower() == s['id'].lower() or structure_name == s['name']]
+    if len(matches) == 0:
+        # Add the structure
+        response = api_v2_request('POST', 'structures', {
+            'name': structure_name,
+            'shortcut': structure_name,
+            'description': '',
+            'aux': {},
+            }, True)
+        print('Added structure `%s\'' % structure_name, file=sys.stderr)
+        structure_id = response['structure']['id']
+    else:
+        structure_id = matches[0]
+        if not pattern:
+            print('Structure `%s\' already exists' % structure_name, file=sys.stderr)
+
+    # Add pattern (if specified)
+    # TODO - check that the pattern does not exist already
+    if pattern:
+        response = api_v2_request('POST', 'structures/%s/patterns'%structure_id, {
+            'priority': priority,
+            'pattern': pattern,
+            }, True)
+        print('Added pattern `%s\'' % pattern, file=sys.stderr)
+
+
+def cmd_add(args):
+    """
+    General add command.
+    """
+    if len(args) >= 1 and args[0] == 'structure':
+        cmd_add_structure(args[1:])
+    elif len(args) >= 1 and args[0].startswith('structures/'):
+        cmd_add_structure([args[0][len('structures/'):]] + args[1:])
+    elif len(args) == 0:
+        utils.error('Specify what to add, i.e. structure')
+    else:
+        utils.error('Unknown item to add: `%s\'', args[0])
+
+
+def cmd_rm_pattern(patterns, structure_name, structure_id):
+    if not patterns:
+        utils.error('No pattern specified (append pattern ID or beginning of the pattern or .) to remove.')
+    if len(patterns) > 1:
+        utils.error('Too many arguments, only one pattern allowed')
+    pattern = patterns[0]
+
+    rm_all = pattern in ['*', '.']
+
+    # Load all patterns
+    response = api_v2_request('GET', 'structures/%s/patterns'%structure_id, {}, True)
+    patterns = response['patterns']
+
+    # Go though patterns one by one, identify pattern IDs
+    # Use a different call for pattern=*
+    matches = [[p['id'], p['pattern']] for p in patterns \
+            if rm_all or p['id'] == pattern or p['pattern'].startswith(pattern)]
+    if not matches:
+        if rm_all:
+            print('No pattern to be removed; structure is empty', file=sys.stderr)
+        else:
+            utils.error('No pattern matching `%s\' found', pattern)
+    if len(matches) > 1 and not rm_all:
+        utils.error('Pattern `%s\' is not specific enough; multiple matches', pattern)
+
+    # Do the physical deletion
+    for pattern_id, pattern_p in matches:
+        response = api_v2_request('DELETE', 'structures/%s/patterns/%s'%(structure_id, pattern_id), {}, True)
+        print('Removed pattern `%s\'' % pattern_p, file=sys.stderr)
+
+
+def cmd_rm_structure(args):
+    """ Remove the structure (or pattern) command.
+    Arguments contain command line (including 'structure' at the beginning)
+    """
+    subject = args[0]
+    structure_name = ''
+    if subject == 'structures':
+        # We don't support removing structures
+        utils.error('Invalid command. Use `rm structure name\' or `rm structures/name\'')
+    if subject == 'structure':
+        if len(args) == 1:
+            utils.error('No structure name specified (append structure name)')
+        if len(args) > 2:
+            utils.error('Too many structure names specified (specify only one name)')
+        structure_name = args[1]
+        patterns = args[2:]
+    elif subject.startswith('structures/'):
+        structure_name = subject[len('structures/'):]
+        patterns = args[1:]
+
+    if not structure_name:
+        utils.error('No structure name specified (append structure name)')
+
+    # Note args contain structure name or ID, and an optional pattern
+
+    CONFIG.load()
+    CONFIG.user_key_required(True)
+
+    # Load all structures
+    response = api_v2_request('GET', 'structures', {}, True)
+    structures = response['structures']
+
+    # Find structure IDs
+    structure = [[structure_name, s['id']] for s in structures if structure_name.lower() == s['id'].lower() or structure_name == s['name']]
+    if not structure:
+        utils.error('Structure `%s\' does not exist', structure_name)
+    if len(structure) > 1:
+        utils.error('Multiple matches for `%s\'', structure_name)
+    structure_id = structure[0][1]
+
+    # Now we know structure exists and we know its ID
+
+    if not patterns: # Removing structure
+        response = api_v2_request('DELETE', 'structures/%s'%structure_id, {}, True)
+        print('Removed structure `%s\'' % structure_name, file=sys.stderr)
+    else:  # Removing patterns
+        cmd_rm_pattern(patterns, structure_name, structure_id)
+
+
 def cmd_rm(args):
     """
     General remove command
     """
-    if len(args) == 0:
+    # In case of removing structures and patterns
+    if args and (args[0] in ['structure', 'structures'] or args[0].startswith('structures/')):
+        cmd_rm_structure(args)
+        return
+
+    if not args:
         args = ['/']
     CONFIG.load()
     CONFIG.user_key_required(True)
@@ -1863,9 +2148,12 @@ def main_root():
         'followed': cmd_followed,
         'clean': cmd_clean,
         'whoami': cmd_whoami,
+        'add': cmd_add,
         # Filesystem operations
         'ls': cmd_ls,
+        'list': cmd_ls,
         'rm': cmd_rm,
+        'remove': cmd_rm,
         'pull': cmd_pull,
     }
     for cmd, func in commands.items():
@@ -1874,7 +2162,7 @@ def main_root():
                 return cmd_follow_multilog(args[1:])
             else:
                 return func(args[1:])
-    utils.die('Error: Unknown command "%s".' % args[0])
+    utils.error('Unknown command "%s".' % args[0])
 
 
 def main():
