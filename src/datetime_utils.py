@@ -2,14 +2,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 # vim: set ts=4 sw=4 et:
+from __future__ import absolute_import
 
-import string
 import datetime
-import time
 import re
+import string
+import time
 
-from constants import DAY, MON, YEAR, SEC, MIN, HOUR
-from utils import die
+from .constants import DAY, MON, YEAR, SEC, MIN, HOUR
+from .utils import die
 
 
 def date_patterns():

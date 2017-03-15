@@ -10,11 +10,11 @@ import stat
 import getopt
 import configparser as ConfigParser
 
-import metrics
-import utils
-from log import log
-from configured_log import ConfiguredLog
-from constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+from . import metrics as metrics
+from . import utils as utils
+from .log import log
+from .configured_log import ConfiguredLog
+from .constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET
@@ -723,3 +723,6 @@ class Config(object):
                 utils.die("Cannot parse %s as port. "
                           "Specify a valid --datahub address" % values[1])
         self.datahub = value
+
+
+config_object = Config()#pylint: disable=invalid-name

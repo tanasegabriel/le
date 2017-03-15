@@ -1,4 +1,5 @@
 # pylint: skip-file
+from __future__ import absolute_import
 
 """SocksiPy - Python SOCKS module.
 Version 1.00

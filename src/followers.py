@@ -4,18 +4,19 @@
 # vim: set ts=4 sw=4 et:
 
 #pylint: disable=too-many-instance-attributes
-import sys
-import os
-import threading
+from __future__ import absolute_import
+
 import glob
+import os
+import sys
+import threading
 import time
 
-
-from log import log
-from constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
+from .constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \
     LINE_SEPARATOR, NAME_CHECK, FOLLOWER_JOIN_INTERVAL, \
     RETRY_GLOB_INTERVAL, MAX_FILES_FOLLOWED, FOLLOWMULTI_JOIN_INTERVAL
+from .log import log
 
 
 class Follower(object):
@@ -284,6 +285,7 @@ class Follower(object):
             if not line:
                 continue
             if self.config.debug_events:
+                sys.stderr.write("\n")
                 sys.stderr.write(line)
             line = self.entry_formatter(line)
             if not line:

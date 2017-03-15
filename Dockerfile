@@ -6,7 +6,7 @@ RUN apt-get install -y
 RUN apt-get install -y wget build-essential libbz2-dev \
     libc6-dev libdb-dev libexpat1-dev libffi-dev \
     libncursesw5-dev libreadline-dev libsqlite3-dev libssl-dev \
-    libtinfo-dev zlib1g-dev python3-setuptools python-setuptools python-pip \
+    libtinfo-dev zlib1g-dev python3-setuptools python-setuptools python3-pip \
     virtualenv build-essential autoconf libtool pkg-config \
     python-opengl python-imaging python-pyrex python-pyside.qtopengl \
     idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml \
@@ -20,13 +20,15 @@ COPY src/ le/src/
 COPY test/ le/test/
 COPY setup.py le/setup.py
 COPY .pylintrc le/pylintrc
+COPY run_tests.sh /run_tests.sh
+COPY run_tests.sh /run_tests.sh
+RUN chmod +x /run_tests.sh
 
-RUN pip install pylint
+RUN pip3 install pylint
 
-RUN cd le && python setup.py build && python setup.py install
+#Python 2
+#RUN cd le && python setup.py build && python setup.py install
 
-RUN touch ~/.bash_profile
-RUN echo "alias test='cd le/test && virtualenv env && source env/bin/activate && pip install -r requirements.pip && ./tests.sh'" > ~/.bash_profile && /bin/bash -c "source ~/.bash_profile"
-
+RUN cd le && python3 setup.py build && python3 setup.py install
 
 #RUN cd le && pylint src

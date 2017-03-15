@@ -3,7 +3,10 @@
 # vim: set ts=4 sw=4 et:
 
 #pylint: disable=wrong-import-order, wrong-import-position
+from __future__ import absolute_import
+
 from future.standard_library import install_aliases
+
 install_aliases()
 from urllib.parse import urlencode, quote #pylint: disable=import-error
 
@@ -26,26 +29,28 @@ import threading
 import time
 import traceback
 import requests
-import queue
-from queue import Queue
+try:
+    import Queue as queue
+except ImportError:
+    import queue
+    from queue import Queue
 import http.client
 # Do not remove - fix for Python #8484
 try:
     import hashlib #pylint: disable=unused-import
 except ImportError:
     pass
-
-import formats
-import socks
-import utils
-import metrics
-from config import Config, FatalConfigurationError
-from followers import Follower, MultilogFollower
-from log import log as log_object
-from domain import Domain
-from backports import CertificateError, match_hostname
-from datetime_utils import parse_timestamp_range
-from constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+from . import formats as formats
+from . import socks as socks
+from . import utils as utils
+from .import metrics as metrics
+from .config import Config, FatalConfigurationError
+from .followers import Follower, MultilogFollower
+from .log import log as log_object
+from .domain import Domain
+from .backports import CertificateError, match_hostname
+from .datetime_utils import parse_timestamp_range
+from .constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
@@ -589,7 +594,7 @@ class Transport(object):
             try:
                 try:
                     entry = self._entries.get(True, IAA_INTERVAL)
-                except Queue.QueueEmpty: #pylint: disable=no-member
+                except queue.Empty:
                     entry = IAA_TOKEN
                 self._send_entry(entry + '\n')
             except Exception:
@@ -1230,7 +1235,8 @@ def start_followers(default_transport, states):
         log_name = log_['log']['name']
         log_id = log_['log']['id']
         log_token = extract_token(log_)
-        #TODO check for no log token
+        if log_token is None:
+            log_token = ""
 
         if log_filename.startswith(PREFIX_MULTILOG_FILENAME):
             log_filename = log_filename.replace(PREFIX_MULTILOG_FILENAME, '', 1).lstrip()
@@ -1483,6 +1489,7 @@ def cmd_monitor(args):
         pass
 
     sys.stderr.write("\nShutting down")
+    sys.stderr.write("\n")
     # Stop metrics
     if smetrics:
         smetrics.cancel()
@@ -1596,7 +1603,7 @@ def _user_prompt(path):
         file_count = 0
         for filename in file_candidates:
             if file_count < MAX_FILES_FOLLOWED:
-                print ('\t{0}'.format(filename))
+                print('\t{0}'.format(filename))
                 file_count = file_count+1
     while True:
         print("\nUse new path to follow files [y] or quit [n]?")
@@ -1662,6 +1669,13 @@ def _list_object(request_, hostnames=False):
     """
     Lists object request given.
     """
+    if utils.safe_get(request_, 'log') is not None:
+        print(json.dumps(request_['log']))
+    elif utils.safe_get(request_, 'logs') is not None:
+        print(json.dumps(request_['logs']))
+    elif utils.safe_get(request_, 'logset') is not None:
+        print(json.dumps(request_['logset']))
+
     obj = request_['object']
     index_name = 'name'
     item_name = ''
@@ -1701,7 +1715,8 @@ def _list_object(request_, hostnames=False):
         if CONFIG.uuid:
             print(item['key'])
         print("%s" % (item[index_name]))
-        utils.print_total(ilist, item_name)
+
+    utils.print_total(ilist, item_name)
 
 
 def _is_log_fs(addr):

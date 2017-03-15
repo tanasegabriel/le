@@ -85,10 +85,14 @@ Once the container is built, you can run it with the following command:
 
     docker run -it le_agent
     
-Then you can run the tests with:
+There is a convenience script that will run the tests & execute pylint. It can be run with:
 
-    cd le/test && virtualenv env && source env/bin/activate && pip install -r requirements.pip && ./tests.sh
+    ./run_tests.sh
     
-Pylint can also be run on the docker container with:
+You can run the tests manually with the following command:
 
-    cd le && pylint src
+    cd /le/test && virtualenv env && source env/bin/activate && pip install -r requirements.pip && ./tests.sh
+    
+Pylint can also be run manually on the docker container with:
+
+    cd /le && pylint src

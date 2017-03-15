@@ -21,6 +21,7 @@ cat "$CONFIG"
 #o [Main]
 #o user-key = f720fe54-879a-11e4-81ac-277d856f873e
 #o agent-key = 41ae887a-284a-4d78-91fe-56485b076148
+#o api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
 #o hostname = myhost
 #o metrics-mem = system
 #o metrics-token =
