@@ -429,7 +429,6 @@ class Config(object):
 
             self.metrics.save(conf)
 
-            #TODO python 2 compatibility
             conf.write(bytes(conf_file))
 
         except IOError as error:
