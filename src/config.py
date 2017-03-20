@@ -378,7 +378,7 @@ class Config(object):
         except (ConfigParser.NoSectionError,
                 ConfigParser.NoOptionError,
                 ConfigParser.MissingSectionHeaderError) as error:
-            raise FatalConfigurationError('%s' % error)
+            raise FatalConfigurationError(error)
         return True
 
     def save(self):  # pylint: disable=too-many-branches

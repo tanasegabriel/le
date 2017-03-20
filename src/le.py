@@ -746,8 +746,8 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
     conn.close()
     LOG.debug('List response: %s', response)
     try:
-        d_response = json.loads(response)
-    except ValueError:
+        d_response = json.loads(response.decode('UTF-8'))
+    except (ValueError, TypeError):
         utils.error('Invalid response (%s)' % response)
 
     if check_status and d_response['response'] != 'ok':
@@ -1882,7 +1882,7 @@ def main():
     try:
         main_root()
     except FatalConfigurationError as error:
-        LOG.error("Fatal: %s", error.message)
+        LOG.error("Fatal: %s", error)
     except KeyboardInterrupt:
         utils.die("\nTerminated", EXIT_TERMINATED)
 

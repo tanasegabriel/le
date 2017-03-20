@@ -11,6 +11,7 @@ import os
 import sys
 import threading
 import time
+from io import open
 
 from logentries.constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \
@@ -125,7 +126,7 @@ class Follower(object):
                 self.real_name = candidate
                 try:
                     self._close_log()
-                    self._file = open(self.real_name)
+                    self._file = open(self.real_name, mode='r', encoding='utf-8')
                     new_position = 0
                     if first_try:
                         if position == -1:

@@ -10,7 +10,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 CONFIG=sandbox_config
 CONFIG_D=sandbox_config.d
-LE="$DIR/../src/le.py --local --debug --config $CONFIG --config.d $CONFIG_D"
+LE="le --local --debug --config $CONFIG --config.d $CONFIG_D"
 
 ACCOUNT_KEY=f720fe54-879a-11e4-81ac-277d856f873e
 HOST_KEY=41ae887a-284a-4d78-91fe-56485b076148
@@ -61,7 +61,8 @@ function finish {
 }
 trap finish EXIT
 
-# Go to the temporar dir
+
+# Go to the temporary dir
 cd -- "$TMP"
 
 # Start API server mock
