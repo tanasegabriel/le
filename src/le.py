@@ -866,7 +866,8 @@ def create_logset(name, filename="", follow=""):
         if response.status_code is 201:
             return response.json()
         else:
-            utils.die("Error - %d. Could not create logset. %s" % (response.status_code, response.reason))
+            utils.die("Error - %d. Could not create logset. %s"
+                      % (response.status_code, response.reason))
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
@@ -1779,7 +1780,8 @@ def cmd_rm(args):
         if response.status_code is 204:
             LOG.info("Successfully deleted \n")
         else:
-            LOG.error('Deleting resource failed, status code: %d %s', (response.status_code, response.reason))
+            LOG.error('Deleting resource failed, status code: %d %s',
+                      response.status_code, response.reason)
     except requests.exceptions.RequestException as error:
         utils.die(error)
 
