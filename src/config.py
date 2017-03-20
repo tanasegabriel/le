@@ -9,6 +9,7 @@ import socket
 import stat
 import getopt
 import configparser as ConfigParser
+from io import open
 
 from . import metrics as metrics
 from . import utils as utils
@@ -388,7 +389,7 @@ class Config(object):
         try:
             conf = ConfigParser.SafeConfigParser()
             utils.create_conf_dir(self)
-            conf_file = open(self.config_filename, 'wb')
+            conf_file = open(self.config_filename, mode='w', encoding='utf-8')
             conf.add_section(MAIN_SECT)
             if self.user_key != NOT_SET:
                 conf.set(MAIN_SECT, USER_KEY_PARAM, self.user_key)
@@ -429,7 +430,7 @@ class Config(object):
 
             self.metrics.save(conf)
 
-            conf.write(bytes(conf_file))
+            conf.write(conf_file)
 
         except IOError as error:
             utils.die("Error: IO error when writing to config file: %s" % error)
