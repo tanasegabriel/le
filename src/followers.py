@@ -12,11 +12,11 @@ import sys
 import threading
 import time
 
-from .constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
+from logentries.constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \
     LINE_SEPARATOR, NAME_CHECK, FOLLOWER_JOIN_INTERVAL, \
     RETRY_GLOB_INTERVAL, MAX_FILES_FOLLOWED, FOLLOWMULTI_JOIN_INTERVAL
-from .log import log
+from logentries.log import log
 
 
 class Follower(object):

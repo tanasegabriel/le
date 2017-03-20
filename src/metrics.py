@@ -14,9 +14,9 @@ import time
 import traceback
 
 import configparser as ConfigParser
-from . import formats
-from .__init__ import __version__
-from .utils import report
+from logentries import formats
+from logentries.__init__ import __version__
+from logentries.utils import report
 
 # Try to import psutils
 try:

@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import logging
 import sys
 
-from .utils import report, LOG_LE_AGENT, EXIT_ERR
+from logentries.utils import report, LOG_LE_AGENT, EXIT_ERR
 
 class Log(object):
     """Log object"""

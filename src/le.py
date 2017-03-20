@@ -37,17 +37,17 @@ try:
     import hashlib #pylint: disable=unused-import
 except ImportError:
     pass
-from . import formats as formats
-from . import socks as socks
-from . import utils as utils
-from .import metrics as metrics
-from .config import Config, FatalConfigurationError
-from .followers import Follower, MultilogFollower
-from .log import log as log_object
-from .domain import Domain
-from .backports import CertificateError, match_hostname
-from .datetime_utils import parse_timestamp_range
-from .constants import * #pylint: disable=unused-wildcard-import, wildcard-import
+from logentries import formats as formats
+from logentries import socks as socks
+from logentries import utils as utils
+from logentries import metrics as metrics
+from logentries.config import Config, FatalConfigurationError
+from logentries.followers import Follower, MultilogFollower
+from logentries.log import log as log_object
+from logentries.domain import Domain
+from logentries.backports import CertificateError, match_hostname
+from logentries.datetime_utils import parse_timestamp_range
+from logentries.constants import * #pylint: disable=unused-wildcard-import, wildcard-import
 
 
 # Explicitely set umask to allow user rw + group read
