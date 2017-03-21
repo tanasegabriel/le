@@ -1,7 +1,4 @@
 """Constants Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
 from __future__ import absolute_import
 
 from logentries.__init__ import __version__

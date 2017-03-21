@@ -1,8 +1,4 @@
 """Follower Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
-
 #pylint: disable=too-many-instance-attributes
 from __future__ import absolute_import
 
@@ -11,7 +7,7 @@ import os
 import sys
 import threading
 import time
-from io import open
+from io import open #pylint: disable=redefined-builtin
 
 from logentries.constants import REOPEN_INT, REOPEN_TRY_INTERVAL, \
     FILE_END, FILE_BEGIN, MAX_BLOCK_SIZE, TAIL_RECHECK, \

@@ -1,15 +1,12 @@
 """Config Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
 # pylint: disable=too-many-instance-attributes, attribute-defined-outside-init
 
 import os
 import socket
 import stat
 import getopt
+from io import open #pylint: disable=redefined-builtin
 import configparser as ConfigParser
-from io import open
 
 from . import metrics as metrics
 from . import utils as utils

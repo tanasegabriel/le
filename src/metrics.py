@@ -1,7 +1,4 @@
 """Metrics Module"""
-#!/usr/bin/env python
-# coding: utf-8
-# vim: set ts=4 sw=4 et:
 
 #pylint: disable=redefined-outer-name, invalid-name
 #pylint: disable=wrong-import-order, wrong-import-position
