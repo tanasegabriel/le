@@ -16,6 +16,7 @@ Testcase 'Init'
 
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_MULTILOG_KEY
 #e Initialized
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 
 Testcase 'Use --multilog parameter with pathname with no wildcard'
 
@@ -57,6 +58,8 @@ Testcase 'Init'
 
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_MULTILOG_KEY
 #e Initialized
+
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 
 Testcase 'Verify agent follows files of the same filename across multiple directories'
 

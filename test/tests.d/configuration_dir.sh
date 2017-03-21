@@ -68,5 +68,5 @@ echo 'abraka' >>$CONFIG_D/foo.conf
 
 $LE ls
 #e Fatal: File contains no section headers.
-#e file: sandbox_config.d/foo.conf, line: 1
+#e file: 'sandbox_config.d/foo.conf', line: 1
 #e 'abraka\n'

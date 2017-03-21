@@ -4,7 +4,7 @@
 
 #pylint: disable=wrong-import-order, wrong-import-position
 from __future__ import absolute_import
-
+from __future__ import unicode_literals
 from future.standard_library import install_aliases
 
 install_aliases()
@@ -553,9 +553,9 @@ class Transport(object):
         # Keep sending data until successful
         while not self._shutdown:
             try:
-                self._socket.send(entry.encode('utf8'))
+                self._socket.send((entry).encode('utf-8'))
                 if self._debug_transport_events:
-                    sys.stderr.write(entry.encode('utf8'))
+                    sys.stderr.write(entry)
                 break
             except socket.error:
                 self._open_connection()
@@ -744,7 +744,7 @@ def request(request_, required=False, check_status=False, rtype='GET', retry=Fal
 
     response = response.read()
     conn.close()
-    LOG.debug('List response: %s', response)
+    LOG.debug('List response: %s', response.decode('UTF-8'))
     try:
         d_response = json.loads(response.decode('UTF-8'))
     except (ValueError, TypeError):
@@ -1205,10 +1205,10 @@ def _get_all_logs_for_host():
 
         for log_id in log_ids:
             log_ = _get_log(log_id)
-            if log_ is not None and 'user_data' in log_['log']:
-                user_data = log_['log']['user_data']
-                if 'le_agent_follow' in user_data and user_data['le_agent_follow'] == "true":
-                    logs.append(log_)
+            le_agent_follow = utils.safe_get(log_, 'log', 'user_data', 'le_agent_follow')
+            if le_agent_follow == "true":
+                logs.append(log_)
+                
 
     for configured_log in CONFIG.configured_logs:
         logs.append(construct_configured_log(configured_log))

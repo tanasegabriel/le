@@ -8,6 +8,7 @@ Scenario 'Unicode handling'
 Testcase 'The agent accepts lines encoded in Unicode'
 
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 #e Initialized
 
 touch example.log

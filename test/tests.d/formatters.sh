@@ -5,6 +5,7 @@
 Scenario 'Default formatters use'
 
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 #e Initialized
 
 Testcase 'Default formatter for HTTP PUT is plain'
@@ -61,6 +62,7 @@ wait $LE_PID 2>/dev/null || true
 Scenario 'Global formatter settings'
 
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 #e Initialized
 
 Testcase 'Setting global formatter affects HTTP PUT'
@@ -122,6 +124,7 @@ Scenario 'Setting section formatter affects logs from that section'
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
 #e Initialized
 
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 echo 'pull-server-side-config = False' >>"$CONFIG"
 echo '[Web]' >>"$CONFIG"
 echo 'token = 053f0e3c-f7a3-434c-91b2-446363f47a21' >>"$CONFIG"

@@ -28,5 +28,4 @@ $LE ls
 #e Domain request: GET /f720fe54-879a-11e4-81ac-277d856f873e/ None {}
 #e List response: {"object": "rootlist", "list": [{"name": "logs", "key": ""}, {"name": "hosts", "key": ""}, {"name": "hostnames", "key": ""}, {"name": "apps", "key": ""}, {"name": "clusters", "key": ""}, {"name": "logtypes", "key": ""}], "response": "ok"}
 #e 6 items
-#e
 

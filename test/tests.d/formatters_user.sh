@@ -32,6 +32,7 @@ $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
 #e Initialized
 
 tee >>"$CONFIG" <<EOF
+api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
 pull-server-side-config = False
 formatters = Formatters
 [apache]
@@ -69,6 +70,7 @@ $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
 #e Initialized
 
 tee >>"$CONFIG" <<EOF
+api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
 pull-server-side-config = False
 formatters = Formatters
 [cassandra]
@@ -109,6 +111,7 @@ $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY --hostname myhost
 #e Initialized
 
 tee >>"$CONFIG" <<EOF
+api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
 formatters = Formatters
 EOF
 

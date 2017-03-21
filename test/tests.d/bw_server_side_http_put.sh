@@ -12,11 +12,11 @@ Testcase 'Init'
 
 $LE init --account-key=$ACCOUNT_KEY
 #e Initialized
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 
 cat $CONFIG
-#o [Main]879a-11e4-81ac-277d856f873e
-#o user-key = f720fe54-
-#o api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
+#o [Main]
+#o user-key = f720fe54-879a-11e4-81ac-277d856f873e
 #o metrics-mem = system
 #o metrics-token =
 #o metrics-disk = sum
@@ -27,11 +27,13 @@ cat $CONFIG
 #o metrics-interval = 5s
 #o metrics-cpu = system
 #o
+#o api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
+
 
 Testcase 'Register'
 
-$LE register --name Name --hostname Hostname
-#e Registered Name (Hostname)
+$LE register --name Name --hostname $UUID
+#e Registered Name ($UUID)
 
 Testcase 'Follow'
 

@@ -19,6 +19,7 @@ Testcase 'init and set client configuration with wildcard for dynamic behaviour'
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_MULTILOG_KEY
 #e Initialized
 
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 echo 'pull-server-side-config = False' >>"$CONFIG"
 echo '[Apache]' >>"$CONFIG"
 echo 'token = 0b52788c-7981-4138-ac40-6720ae2d5f0c' >>"$CONFIG"
@@ -95,6 +96,7 @@ Scenario 'Using server side configuration to test dynamic behaviour'
 Testcase 'Init'
 $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_MULTILOG_KEY
 #e Initialized
+echo 'api-key = 459c6737-375a-447b-aa2a-56cd1400a34c' >>"$CONFIG"
 
 Testcase 'Follow file across directories as new ones created; stop following when directories deleted'
 

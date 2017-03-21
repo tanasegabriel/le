@@ -528,7 +528,7 @@ def print_total(elems, name):
     elif total == 1:
         report("1 " + name)
     else:
-        report("%d %ss \n" % (total, name))
+        report("%d %ss" % (total, name))
 
 
 def retrieve_account_key(config):

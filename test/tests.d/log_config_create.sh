@@ -8,6 +8,7 @@ $LE init --account-key=$ACCOUNT_KEY --host-key=$HOST_KEY
 #e Initialized
 
 tee >>"$CONFIG" <<EOF
+api-key = 459c6737-375a-447b-aa2a-56cd1400a34c
 [cassandra]
 path=$TMP/system.out
 destination=Name2/Log name 1
