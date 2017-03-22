@@ -839,11 +839,11 @@ def create_logset(name, filename="", follow=""):
     headers = generate_headers()
     platform_info = platform.dist()
 
-    distribution = ""
+    distribution = "".encode('utf-8')
     if platform_info[0]:
         distribution = platform_info[0]
 
-    version = ""
+    version = "".encode('utf-8')
     if platform_info[1]:
         version = platform_info[1]
 
@@ -911,7 +911,7 @@ def get_logset_by_name(logset_name):
         for item in logsets['logsets']:
             if item['name'] is logset_name:
                 return item
-    return False
+    return None
 
 
 def get_or_create_logset(logset_name):
@@ -921,8 +921,7 @@ def get_or_create_logset(logset_name):
 
     logset = get_logset_by_name(logset_name)
 
-    if not logset:
-
+    if logset is not None:
         logset = create_logset(logset_name)
 
     return logset['logset']['id']
@@ -1235,8 +1234,7 @@ def start_followers(default_transport, states):
         log_name = log_['log']['name']
         log_id = log_['log']['id']
         log_token = extract_token(log_)
-        if log_token is None:
-            log_token = ""
+        log_token = "" if log_token is None else log_token
 
         if log_filename.startswith(PREFIX_MULTILOG_FILENAME):
             log_filename = log_filename.replace(PREFIX_MULTILOG_FILENAME, '', 1).lstrip()
@@ -1249,8 +1247,7 @@ def start_followers(default_transport, states):
             continue
 
         entry_filter = get_filters(filter_config[0], filter_config[1],
-                                   log_name, log_id, log_filename,
-                                   log_token)
+                                   log_name, log_id, log_filename, log_token)
         if not entry_filter:
             continue
 

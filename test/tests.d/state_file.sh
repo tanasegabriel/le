@@ -35,13 +35,13 @@ echo 'Message 3' >> example.log
 sync
 sleep 2
 
+#e
 #e Message 2
 #e Message 3
 
 kill $LE_PID
 wait $LE_PID
 
-#e
 #e Shutting down
 
 Testcase 'Monitoring - second phrase'
@@ -55,11 +55,11 @@ $LE --debug-events monitor &
 #e Following $TMP/example.log
 LE_PID=$!
 
+#e
 #e Message 4 (not to be lost)
 #e Message 5 (not to be lost)
 
 sleep 2
 
-#e
 #e Shutting down
 

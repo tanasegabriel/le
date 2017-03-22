@@ -20,23 +20,7 @@ echo 'pull-server-side-config = False' >>"$CONFIG"
 echo '[Apache]' >>"$CONFIG"
 echo 'token = 0b52788c-7981-4138-ac40-6720ae2d5f0c' >>"$CONFIG"
 echo "path = Multilog:$TMP/apache*/current" >>"$CONFIG"
-cat "$CONFIG"
-#o [Main]
-#o user-key = f720fe54-879a-11e4-81ac-277d856f873e
-#o agent-key = 9df0ea6f-36fa-820f-a6bc-c97da8939a06
-#o metrics-mem = system
-#o metrics-token = 
-#o metrics-disk = sum
-#o metrics-swap = system
-#o metrics-space = /
-#o metrics-vcpu = 
-#o metrics-net = sum
-#o metrics-interval = 5s
-#o metrics-cpu = system
-#o
-#o pull-server-side-config = False
-#o [Apache]
-#o token = 0b52788c-7981-4138-ac40-6720ae2d5f0c
+cat "$CONFIG" | grep path
 #o path = Multilog:$TMP/apache*/current
 
 Testcase 'Monitoring file in multiple directories'
@@ -56,6 +40,7 @@ LE_PID=$!
 sleep 1
 echo 'First message' >> apache-01/current
 sleep 1
+#e
 #e First message
 echo 'Second message' >> apache-02/current
 sleep 1
@@ -67,6 +52,5 @@ sleep 1
 # tidy up test directory and daemon
 rm -rf apache*
 
-#e
 #e Shutting down
 

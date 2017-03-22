@@ -325,7 +325,7 @@ class Follower(object):
 
 class MultilogFollower(object):
     """
-    The FollowMultilog is responsible for handling those logs that were set-up using the
+    The MultilogFollower is responsible for handling those logs that were set-up using the
     '--multilog' option and that may have a wildcard in the pathname.
     In which case multiple local (log) files will be followed, but with all the new events
     from all the files forwarded to the same single log in the logentries infrastructure.
@@ -376,6 +376,7 @@ class MultilogFollower(object):
                                     self.entry_formatter,
                                     self.transport,
                                     states.get(filename),
+                                    self.config,
                                     True)
                 self._followers.append(follower)
                 if self.config.debug_multilog:

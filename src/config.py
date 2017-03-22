@@ -8,11 +8,11 @@ import getopt
 from io import open #pylint: disable=redefined-builtin
 import configparser as ConfigParser
 
-from . import metrics as metrics
-from . import utils as utils
-from .log import log
-from .configured_log import ConfiguredLog
-from .constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
+from logentries import metrics as metrics
+from logentries import utils as utils
+from logentries.log import log
+from logentries.configured_log import ConfiguredLog
+from logentries.constants import NOT_SET, EXIT_OK, MULTILOG_USAGE, DESTINATION_PARAM, TOKEN_PARAM
 
 
 DEFAULT_USER_KEY = NOT_SET
