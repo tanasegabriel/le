@@ -1174,7 +1174,14 @@ def config_formatters():
 
 def extract_token(log_):
     """Extract the log token value if it exists"""
-    return utils.safe_get(log_, 'log', 'token_seed')
+    try:
+        tokens = log_['log']['tokens']
+        if len(tokens) == 1:
+            return tokens[0]
+        else:
+            return None
+    except TypeError:
+        return None
 
 
 def construct_configured_log(configured_log):
