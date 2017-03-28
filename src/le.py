@@ -1200,14 +1200,17 @@ def _get_all_logs_for_host():
         logsets = get_logset(CONFIG.agent_key)
         log_ids = []
 
-        for log_info in logsets['logset']['logs_info']:
-            log_ids.append(log_info['id'])
+        try:
+            for log_info in logsets['logset']['logs_info']:
+                log_ids.append(log_info['id'])
 
-        for log_id in log_ids:
-            log_ = _get_log(log_id)
-            le_agent_follow = utils.safe_get(log_, 'log', 'user_data', 'le_agent_follow')
-            if le_agent_follow == "true":
-                logs.append(log_)
+            for log_id in log_ids:
+                log_ = _get_log(log_id)
+                le_agent_follow = utils.safe_get(log_, 'log', 'user_data', 'le_agent_follow')
+                if le_agent_follow == "true":
+                    logs.append(log_)
+        except TypeError:
+            utils.die("Could not retrieve server side config")
 
     for configured_log in CONFIG.configured_logs:
         logs.append(construct_configured_log(configured_log))
