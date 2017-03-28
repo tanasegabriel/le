@@ -832,18 +832,18 @@ def create_log(logset_id, name, filename, do_follow=True, source=None):
         utils.die(error)
 
 
-def create_logset(name, filename="", follow=""):
+def create_logset(hostname, filename="", follow=""):
     """
     Creates a new host on server with given parameters.
     """
     headers = generate_headers()
     platform_info = platform.dist()
 
-    distribution = "".encode('utf-8')
+    distribution = ""
     if platform_info[0]:
         distribution = platform_info[0]
 
-    version = "".encode('utf-8')
+    version = ""
     if platform_info[1]:
         version = platform_info[1]
 
@@ -856,7 +856,7 @@ def create_logset(name, filename="", follow=""):
 
     request_params = {
         'logset': {
-            'name': name,
+            'name': hostname,
             'user_data': user_data
         }
     }
@@ -909,7 +909,7 @@ def get_logset_by_name(logset_name):
     logsets = get_logset()
     if logsets is not None:
         for item in logsets['logsets']:
-            if item['name'] is logset_name:
+            if item['name'] == logset_name:
                 return item
     return None
 
@@ -1021,7 +1021,7 @@ def cmd_register(args):
 
     system_info = system_detect(True)
 
-    logset = create_logset(CONFIG.name)
+    logset = create_logset(CONFIG.hostname)
     CONFIG.agent_key = logset['logset']['id']
     CONFIG.save()
 
@@ -1092,8 +1092,9 @@ def get_formatters(available_formatters,
     """Get formatters by log name, ID or token"""
     default_formatter = formats.get_formatter(CONFIG.formatter,
                                               CONFIG.hostname, log_name, log_token)
+    
     _debug_formatters(
-        " Looking for formatters by log_name=%s id=%s token=%s", log_name, log_id, log_token)
+        " Looking for formatters by log_name=%s id=%s token=%s \n", log_name, log_id, log_token)
 
     entry_formatter = None
     if not entry_formatter and log_name:
@@ -1177,17 +1178,15 @@ def extract_token(log_):
 def construct_configured_log(configured_log):
     """Create a configured log object"""
     return {
-        'log': {
-            'name': configured_log.name,
-            'id': configured_log.log_id,
-            'source_type': 'token',
-            'tokens': [configured_log.token],
-            'user_data': {
-                'le_agent_filename': configured_log.path,
-                'le_agent_follow': 'true'
-            },
-            'formatter': configured_log.formatter
-        }
+        'name': utils.safe_get(configured_log, 'name'),
+        'id': utils.safe_get(configured_log, 'id'),
+        'source_type': 'token',
+        'tokens': [utils.safe_get(configured_log, 'token')],
+        'user_data': {
+            'le_agent_filename': utils.safe_get(configured_log, 'path'),
+            'le_agent_follow': 'true'
+        },
+        'formatter': configured_log.formatter
     }
 
 
@@ -1207,13 +1206,20 @@ def _get_all_logs_for_host():
             le_agent_follow = utils.safe_get(log_, 'log', 'user_data', 'le_agent_follow')
             if le_agent_follow == "true":
                 logs.append(log_)
-                
 
     for configured_log in CONFIG.configured_logs:
         logs.append(construct_configured_log(configured_log))
 
     return logs
 
+def _init_entry_identifier(entry_identifier):
+    """Compiles entry separator defined by regular expression. If the
+    compilation is not successfull, it return None.
+    """
+    try:
+        return re.compile(entry_identifier)
+    except re.error:
+        return None
 
 def start_followers(default_transport, states):
     """ Loads logs from the server (or configuration) and initializes followers.
@@ -1254,6 +1260,14 @@ def start_followers(default_transport, states):
         entry_formatter = get_formatters(available_formatters,
                                          log_name, log_id, log_token)
 
+        s_entry_identifier = CONFIG.entry_identifier
+        if s_entry_identifier:
+            entry_identifier = _init_entry_identifier(s_entry_identifier)
+            if not entry_identifier:
+                LOG.error("Invalid entry separator `%s' ignored", s_entry_identifier)
+        else:
+            entry_identifier = None
+            
         LOG.info("Following %s", log_filename)
 
         if log_token is not None or CONFIG.datahub is not None:
@@ -1292,11 +1306,11 @@ def start_followers(default_transport, states):
         # Instantiate the follow_multilog for 'multilog' filename,
         # otherwise the individual follower
         if multilog_filename:
-            follow_multilog = MultilogFollower(log_filename, entry_filter, entry_formatter,
+            follow_multilog = MultilogFollower(log_filename, entry_filter, entry_formatter, entry_identifier,
                                                transport, states, CONFIG)
             multilog_followers.append(follow_multilog)
         else:
-            follower = Follower(log_filename, entry_filter, entry_formatter,
+            follower = Follower(log_filename, entry_filter, entry_formatter, entry_identifier,
                                 transport, states.get(log_filename), CONFIG)
             followers.append(follower)
 
@@ -1722,7 +1736,36 @@ def _is_log_fs(addr):
             return True
     return False
 
-
+def _list_logset(args):
+    resources = str(args[0]).split("/")
+    
+    if len(resources) is 1:
+        logset_names = []
+        for logset_ in get_logset()['logsets']:
+            logset_names.append(utils.safe_get(logset_, 'name'))
+        print("\n".join(logset_names))
+        utils.print_total(logset_names, 'host')
+    elif len(resources) is 2:
+        logset = get_logset_by_name(resources[1])
+        print("name = %s" % utils.safe_get(logset, 'user_data', 'le_agent_filename'))
+        print("hostname = %s" % utils.safe_get(logset, 'name'))
+        print("key = %s" % utils.safe_get(logset, 'id'))
+        print("distribution = %s" % utils.safe_get(logset,'user_data',  'le_agent_distribution'))
+        print("distver = %s" % utils.safe_get(logset,'user_data',  'le_agent_distver'))
+    elif len(resources) is 3:
+        logset = get_logset_by_name(resources[1])
+        logs = utils.safe_get(logset, 'logs_info')
+        
+        if logs is None:
+            utils.report("no Logs")
+            return 
+        for log_ in logs:
+            print(utils.safe_get(log_, 'name'))
+        utils.print_total(logs, 'log')
+    else:
+        utils.die('Unknown object type "%s". Agent too old?' % object)
+    
+    
 def cmd_ls_ips():
     """
     List IPs used by the agent.
@@ -1741,8 +1784,12 @@ def cmd_ls(args):
     """
     General list command
     """
+    CONFIG.load()
     if len(args) == 1 and args[0] == 'ips':
         cmd_ls_ips()
+        return
+    if len(args) == 1 and "host" in args[0]: 
+        _list_logset(args)
         return
     if len(args) == 0:
         args = ['/']

@@ -176,7 +176,7 @@ class ApiHandler( cyclone.web.RequestHandler):
                 resp['hosts'][1]['logs'] = [ LOG1 ]
             self.write( json.dumps( resp))
         else:
-            raise cyclone.web.HTTPError( 400)
+            raise cyclone.web.HTTPError(400)
 
 class AccountHandler( cyclone.web.RequestHandler):
     def get( self, account_id):
@@ -268,6 +268,7 @@ def response_ok( x):
 
 if __name__ == "__main__":
     application = cyclone.web.Application([
+        (r"(.*)?", LogsetHandler),
         (r"/", ApiHandler),
         (r"/([a-z0-9-]+)/", AccountHandler),
         (r"/([a-z0-9-]+)/hosts", HostsHandler),
@@ -276,7 +277,7 @@ if __name__ == "__main__":
         (r"/([a-z0-9-]+)/hosts/([a-zA-Z0-9%-]+)/([a-zA-Z0-9%-]+)", LogHandler),
         (r"/([a-z0-9-]+)/hosts/([a-zA-Z0-9%-]+)/([a-zA-Z0-9%-]+)/.*", IngestionHandler),
     ])
-    log.startLogging( sys.stdout)
-    reactor.listenTCP( 8081, application)
+    log.startLogging(sys.stdout)
+    reactor.listenTCP(8081, application)
     reactor.run()
 

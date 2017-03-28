@@ -26,6 +26,7 @@ class Follower(object):
                  name,
                  entry_filter,
                  entry_formatter,
+                 entry_identifier,
                  transport,
                  state,
                  config,
@@ -34,9 +35,11 @@ class Follower(object):
         self.name = name
         self.real_name = None
         self.entry_filter = entry_filter
+        self.entry_identifier = entry_identifier
         self.entry_formatter = entry_formatter
         self.transport = transport
         self.config = config
+
         # FollowMultilog usage
         self._disable_glob = disable_glob
 
@@ -189,7 +192,7 @@ class Follower(object):
             buff_lines.append(self._read_file_rest[:MAX_BLOCK_SIZE])
             self._read_file_rest = self._read_file_rest[MAX_BLOCK_SIZE:]
 
-        return [line for line in buff_lines[:-1]]
+        return buff_lines
 
 
     def _set_file_position(self, offset, start=FILE_BEGIN):
@@ -207,6 +210,8 @@ class Follower(object):
         """Accepts lines received and merges them to multiline events.
         """
         # Fast track
+        if not self.entry_identifier:
+            return lines
         if not lines:
             if self._entry_rest:
                 events = [LINE_SEPARATOR.join(self._entry_rest)]
@@ -219,10 +224,13 @@ class Follower(object):
         new_entry = self._entry_rest
         self._entry_rest = []
         for line in lines:
-            if new_entry:
-                new_lines.append(LINE_SEPARATOR.join(new_entry))
-                new_entry = []
-            new_entry.append(line)
+            if self.entry_identifier.search(line):
+                if new_entry:
+                    new_lines.append(LINE_SEPARATOR.join(new_entry))
+                    new_entry = []
+                new_entry.append(line)
+            else:
+                new_entry.append(line)
         self._entry_rest = new_entry
         return new_lines
 
@@ -281,10 +289,10 @@ class Follower(object):
             line = self.entry_filter(line)
             if not line:
                 continue
+            line = self.entry_formatter(line)
             if self.config.debug_events:
                 sys.stderr.write("\n")
                 sys.stderr.write(line)
-            line = self.entry_formatter(line)
             if not line:
                 continue
             self.transport.send(line)
@@ -334,6 +342,7 @@ class MultilogFollower(object):
                  name,
                  entry_filter,
                  entry_formatter,
+                 entry_identifier,
                  transport,
                  states,
                  config,
@@ -343,6 +352,7 @@ class MultilogFollower(object):
         self.flush = True
         self.entry_filter = entry_filter
         self.entry_formatter = entry_formatter
+        self.entry_identifier = entry_identifier
         self.transport = transport
         self.config = config
 
@@ -374,6 +384,7 @@ class MultilogFollower(object):
                 follower = Follower(filename,
                                     self.entry_filter,
                                     self.entry_formatter,
+                                    self.entry_identifier,
                                     self.transport,
                                     states.get(filename),
                                     self.config,

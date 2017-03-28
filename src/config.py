@@ -691,12 +691,6 @@ class Config(object):
             utils.die('Error: Agent key does not look right.')
         self.agent_key = value
 
-    def _set_api_key(self, value):
-        """Set the api key to the value provided"""
-        if not self._check_key(value):
-            utils.die('Error: API key does not look right.')
-        self.api_key = value
-
     def _set_datahub_settings(self, value, should_die=True):
         """Set datahub settings"""
         if not value and should_die:
