@@ -1092,7 +1092,7 @@ def get_formatters(available_formatters,
     """Get formatters by log name, ID or token"""
     default_formatter = formats.get_formatter(CONFIG.formatter,
                                               CONFIG.hostname, log_name, log_token)
-    
+
     _debug_formatters(
         " Looking for formatters by log_name=%s id=%s token=%s \n", log_name, log_id, log_token)
 
@@ -1178,15 +1178,17 @@ def extract_token(log_):
 def construct_configured_log(configured_log):
     """Create a configured log object"""
     return {
-        'name': utils.safe_get(configured_log, 'name'),
-        'id': utils.safe_get(configured_log, 'id'),
-        'source_type': 'token',
-        'tokens': [utils.safe_get(configured_log, 'token')],
-        'user_data': {
-            'le_agent_filename': utils.safe_get(configured_log, 'path'),
-            'le_agent_follow': 'true'
-        },
-        'formatter': configured_log.formatter
+        'log': {
+            'name': configured_log.name,
+            'id': configured_log.log_id,
+            'source_type': 'token',
+            'tokens': [configured_log.token],
+            'user_data': {
+                'le_agent_filename': configured_log.path,
+                'le_agent_follow': 'true'
+            },
+            'formatter': configured_log.formatter
+        }
     }
 
 
@@ -1267,7 +1269,7 @@ def start_followers(default_transport, states):
                 LOG.error("Invalid entry separator `%s' ignored", s_entry_identifier)
         else:
             entry_identifier = None
-            
+
         LOG.info("Following %s", log_filename)
 
         if log_token is not None or CONFIG.datahub is not None:
@@ -1306,7 +1308,8 @@ def start_followers(default_transport, states):
         # Instantiate the follow_multilog for 'multilog' filename,
         # otherwise the individual follower
         if multilog_filename:
-            follow_multilog = MultilogFollower(log_filename, entry_filter, entry_formatter, entry_identifier,
+            follow_multilog = MultilogFollower(log_filename, entry_filter,
+                                               entry_formatter, entry_identifier,
                                                transport, states, CONFIG)
             multilog_followers.append(follow_multilog)
         else:
@@ -1738,7 +1741,7 @@ def _is_log_fs(addr):
 
 def _list_logset(args):
     resources = str(args[0]).split("/")
-    
+
     if len(resources) is 1:
         logset_names = []
         for logset_ in get_logset()['logsets']:
@@ -1750,22 +1753,22 @@ def _list_logset(args):
         print("name = %s" % utils.safe_get(logset, 'user_data', 'le_agent_filename'))
         print("hostname = %s" % utils.safe_get(logset, 'name'))
         print("key = %s" % utils.safe_get(logset, 'id'))
-        print("distribution = %s" % utils.safe_get(logset,'user_data',  'le_agent_distribution'))
-        print("distver = %s" % utils.safe_get(logset,'user_data',  'le_agent_distver'))
+        print("distribution = %s" % utils.safe_get(logset, 'user_data', 'le_agent_distribution'))
+        print("distver = %s" % utils.safe_get(logset, 'user_data', 'le_agent_distver'))
     elif len(resources) is 3:
         logset = get_logset_by_name(resources[1])
         logs = utils.safe_get(logset, 'logs_info')
-        
+
         if logs is None:
             utils.report("no Logs")
-            return 
+            return
         for log_ in logs:
             print(utils.safe_get(log_, 'name'))
         utils.print_total(logs, 'log')
     else:
         utils.die('Unknown object type "%s". Agent too old?' % object)
-    
-    
+
+
 def cmd_ls_ips():
     """
     List IPs used by the agent.
@@ -1788,7 +1791,7 @@ def cmd_ls(args):
     if len(args) == 1 and args[0] == 'ips':
         cmd_ls_ips()
         return
-    if len(args) == 1 and "host" in args[0]: 
+    if len(args) == 1 and "host" in args[0]:
         _list_logset(args)
         return
     if len(args) == 0:
