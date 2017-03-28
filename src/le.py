@@ -786,8 +786,8 @@ def _get_log(log_id=None):
             return response.json()
         else:
             LOG.error("Could not retrieve log - %d", response.status_code)
-            id = log_id if log_id else ""
-            LOG.error("Error %d.\nCould not retrieve log %s", response.status_code, id)
+            log_id_ = log_id if log_id else ""
+            LOG.error("Error %d.\nCould not retrieve log %s", response.status_code, log_id_)
             return None
     except requests.exceptions.RequestException as error:
         utils.die(error)
