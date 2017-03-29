@@ -834,7 +834,7 @@ def create_log(logset_id, name, filename, do_follow=True, source=None):
         utils.die(error)
 
 
-def create_logset(hostname, filename="", follow=""):
+def create_logset(hostname):
     """
     Creates a new host on server with given parameters.
     """
@@ -850,8 +850,6 @@ def create_logset(hostname, filename="", follow=""):
         version = platform_info[1]
 
     user_data = {
-        'le_agent_filename': filename,
-        'le_agent_follow': follow,
         'le_agent_distribution': distribution,
         'le_agent_distver': version
     }
@@ -981,7 +979,6 @@ def cmd_whoami(args):
     logs = _get_loglist_with_paths()
     if logset is not None:
         LOG.info("name %s", utils.safe_get(logset, 'logset', 'name'))
-        LOG.info("hostname %s", CONFIG.hostname)
         LOG.info("key %s", utils.safe_get(logset, 'logset', 'id'))
         LOG.info("distribution %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distname'))
         LOG.info("distver %s", utils.safe_get(logset, 'logset', 'user_data', 'le_distver'))

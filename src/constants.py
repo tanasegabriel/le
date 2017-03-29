@@ -129,7 +129,7 @@ usage: le COMMAND [ARGS]
 Where command is one of:
   init      Write local configuration file
   reinit    As init but does not reset undefined parameters
-  register  Register this host
+  register  Register a logset for this host
     --name=  name of the host
     --hostname=  hostname of the host
   whoami    Displays settings for this host
