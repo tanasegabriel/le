@@ -23,6 +23,20 @@ then
 	exit 1
 fi
 
+if [ "$1" = --silent ];
+then
+        silent=true
+        LE_ACCOUNT_KEY=$2
+elif [ "$2" = --silent ];
+then
+        silent=true
+        LE_ACCOUNT_KEY=$1
+else
+        silent=false
+        LE_ACCOUNT_KEY=$1
+fi
+
+
 KEY_CMD_MIT="gpg --homedir /root/.gnupg --keyserver hkp://pgp.mit.edu:80 --recv-keys A5270289C43C79AD"
 KEY_CMD_UBUNTU="gpg --homedir /root/.gnupg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A5270289C43C79AD"
 KEY_CMD_EXPORT="gpg --homedir /root/.gnupg -a --export A5270289C43C79AD"
@@ -55,7 +69,6 @@ DAEMON_RESTART_CMD="if which service &>/dev/null ; then service logentries resta
 FOUND=0
 AGENT_NOT_FOUND="The agent was not found after installation.\n Please contact support@logentries.com\n"
 SET_ACCOUNT_KEY="--account-key="
-LE_ACCOUNT_KEY=$1
 
 TAG_NAMES=("Kernel - Process Terminated" "Kernel - Process Killed" "Kernel - Process Started" "Kernel - Process Stopped" "User Logged In" "Invalid User Login attempt" "POSSIBLE BREAK-IN ATTEMPT" "Error")
 TAG_PATTERNS=("/terminated with status 100/" "/Killed process/" "/\/proc\/kmsg started/" "/Kernel logging (proc) stopped/" "/Accepted publickey for/" "/Invalid user/" "/POSSIBLE BREAK-IN ATTEMPT/" "/Invalid user admin/")
@@ -93,8 +106,8 @@ declare -a LOGS_TO_FOLLOW=(
 
 # Test regex pattern against LE_ACCOUNT_KEY arg 1.
 regex_acct_key="[0-9A-Za-z]{8}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]{12}$"
-if [ -n "$1" ] ; then
-	if [[ $1 =~ $regex_acct_key ]] ; then
+if [ -n "$LE_ACCOUNT_KEY" ] ; then
+	if [[ "$LE_ACCOUNT_KEY" =~ $regex_acct_key ]] ; then
 		printf "proceeding..."
 	else
 		printf "\nWrong format entered for account key.\nCorrect format is xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx ... Exiting installer\n\n"
@@ -108,14 +121,20 @@ LOGFILE=/tmp/logentries_debug
 if [ -f /etc/le/config ]; then
 	printf "\n***** WARNING *****\n"
 	printf "It looks like you already have the Logentries agent registered on this machine\n"
-	read -p "Are you sure you want to clear your existing settings and continue with the installation? (y) or (n): "
-	if [[ $REPLY =~ ^[Yy]$ ]]; then
-		$CONFIG_DELETE_CMD
-		printf "OK\n"
+	if [ "$silent" = true ];
+	then
+		REPLY="Y"
+		printf "Clearing existing settings...\n"
 	else
-		echo ""
-		printf "Exiting install script\n"
-		exit 0
+		read -p "Are you sure you want to clear your existing settings and continue with the installation? (y) or (n): "
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
+			$CONFIG_DELETE_CMD
+			printf "OK\n"
+		else
+			echo ""
+			printf "Exiting install script\n"
+			exit 0
+		fi
 	fi
 fi
 
@@ -164,7 +183,12 @@ EOL
 
 	# Prompt the user for their Logentries credentials and register the agent
 	if [[ -z "$LE_ACCOUNT_KEY" ]];then
-		$REGISTER_CMD
+		if [ "$silent" = true ];
+                then
+                        printf "Basic Authentication is not available in silent mode. Please use 'le register' afterwards\n"
+                else
+                        $REGISTER_CMD
+                fi
 	else
 		printf "Account Key found, registering automatically...\n"
 		$REGISTER_CMD $SET_ACCOUNT_KEY$LE_ACCOUNT_KEY
@@ -241,7 +265,12 @@ elif [ -f /etc/debian_version ]; then
 
 	# Prompt the user for their Logentries credentials and register the agent
 	if [[ -z "$LE_ACCOUNT_KEY" ]];then
-		$REGISTER_CMD
+		if [ "$silent" = true ];
+                then
+                        printf "Basic Authentication is not available in silent mode. Please use 'le register' afterwards\n"
+                else
+                        $REGISTER_CMD
+                fi
 	else
 		printf "Account Key found, registering automatically...\n"
 		$REGISTER_CMD $SET_ACCOUNT_KEY$LE_ACCOUNT_KEY
@@ -290,7 +319,12 @@ EOL
 
 	# Prompt the user for their Logentries credentials and register the agent
 	if [[ -z "$LE_ACCOUNT_KEY" ]];then
-		$REGISTER_CMD
+		if [ "$silent" = true ];
+		then
+			printf "Basic Authentication is not available in silent mode. Please use 'le register' afterwards...\n"
+		else
+			$REGISTER_CMD
+		fi
 	else
 		printf "Account Key found, registering automatically...\n"
 		$REGISTER_CMD $SET_ACCOUNT_KEY$LE_ACCOUNT_KEY
@@ -332,7 +366,12 @@ elif [ -f /etc/gentoo-release ] ; then
 
 	# Prompt the user for their Logentries credentials and register the agent
 	if [[ -z "$LE_ACCOUNT_KEY" ]];then
-		$REGISTER_CMD
+		if [ "$silent" = true ];
+                then
+                        printf "Basic Authentication is not available in silent mode. Please use 'le register' afterwards\n"
+                else
+                        $REGISTER_CMD
+                fi
 	else
 		printf "Account Key found, registering automatically...\n"
 		$REGISTER_CMD $SET_ACCOUNT_KEY$LE_ACCOUNT_KEY
@@ -365,26 +404,31 @@ if [ $FOUND == "1" ]; then
 	done
 
 	printf "$FILES_FOUND additional logs found.\n"
+	if [ "$silent" = false ];
+	then
 	read -p "Would you like to monitor all of these too? (n) allows you to choose individual logs...(y) or (n): "
 	printf "\n\n"
-	if [[ $REPLY =~ ^[Yy]$ ]];then
-		printf "Monitoring all logs\n"
-		for j in "${LOGS_TO_FOLLOW[@]}"
-		do
-			$FOLLOW_CMD $j >$LOGFILE 2>&1
-			printf "."
-		done
-		printf "\n"
-	else
-		for j in "${LOGS_TO_FOLLOW[@]}"
-		do
-			if [ -f $j ]; then
-				read -p "Would you like to monitor $j ?..(y) or (n): "
-				if [[ $REPLY =~ ^[Yy]$ ]]; then
-					$FOLLOW_CMD $j >$LOGFILE 2>&1
+		if [[ $REPLY =~ ^[Yy]$ ]];then
+			printf "Monitoring all logs\n"
+			for j in "${LOGS_TO_FOLLOW[@]}"
+			do
+				$FOLLOW_CMD $j >$LOGFILE 2>&1
+				printf "."
+			done
+			printf "\n"
+		else
+			for j in "${LOGS_TO_FOLLOW[@]}"
+			do
+				if [ -f $j ]; then
+					read -p "Would you like to monitor $j ?..(y) or (n): "
+					if [[ $REPLY =~ ^[Yy]$ ]]; then
+						$FOLLOW_CMD $j >$LOGFILE 2>&1
+					fi
 				fi
-			fi
-		done
+			done
+		fi
+	else
+		printf "Please use 'le follow' afterwards for monitoring these too...\n"
 	fi
 	eval $DAEMON_RESTART_CMD >$LOGFILE 2>&1
 	printf "\n\n"
